@@ -129,6 +129,7 @@ SOURCES = [
 def run(etl_run):
     """Land every source table. Returns rows written per staging table."""
     counts = {}
+    watermark = None if etl_run.full else etl_run.since
     for table_name, source_model, staging_model, mapper, related in SOURCES:
         with etl_run.phase("EXTRACT", table_name) as counter:
             if etl_run.full:
@@ -137,8 +138,8 @@ def run(etl_run):
             queryset = source_model.objects.all()
             if related:
                 queryset = queryset.select_related(*related)
-            if not etl_run.full and etl_run.since is not None:
-                queryset = queryset.filter(updated_at__gt=etl_run.since)
+            if watermark is not None:
+                queryset = queryset.filter(updated_at__gt=watermark)
 
             rows = [mapper(source, etl_run.run_id) for source in queryset.iterator()]
             counter.read = len(rows)

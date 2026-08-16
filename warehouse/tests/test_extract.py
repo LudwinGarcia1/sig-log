@@ -56,11 +56,15 @@ class ExtractTest(TestCase):
             StgCustomer.objects.filter(run_id=incremental.run_id).count(), 1
         )
 
-    def test_last_successful_run_returns_the_latest_finish(self):
+    def test_last_successful_run_reads_the_load_phase_not_the_extract(self):
         first = EtlRun(full=True)
         run_extract(first)
-        # last_successful_run() watches the LOAD phase, not EXTRACT: a run
-        # that extracted but never loaded must be re-extracted from scratch.
+
+        # An extract that succeeded is NOT a watermark: a run that landed rows
+        # but failed to load them must be extracted again. Only a completed
+        # LOAD moves the watermark.
+        self.assertIsNone(EtlRun(full=False).last_successful_run())
+
         EtlLog.objects.filter(run_id=first.run_id).update(
             phase="LOAD", status="SUCCESS"
         )
