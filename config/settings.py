@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "apps.maintenance",
     "seed",
     "warehouse",
+    "ml",
 ]
 
 MIDDLEWARE = [
