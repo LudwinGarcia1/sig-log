@@ -165,6 +165,9 @@ def _transform_delay_causes(etl_run):
             code = cleaning.normalize_code(row.code)
             if not code or code in seen:
                 counter.rejected += 1
+                etl_run.reject("stg_delay_cause", code, "deduplicate",
+                               "Clave natural repetida; se conserva el registro más reciente.",
+                               _payload(row, "code", "name"))
                 continue
             seen.add(code)
             clean.append({
@@ -303,6 +306,19 @@ def _transform_fuel_loads(etl_run, valid_vehicles, valid_operators):
             operator = cleaning.normalize_code(row.operator_number)
             fields = ("folio", "vehicle_plate", "liters", "odometer_km")
 
+            # The odometer chain is bookkeeping about the VEHICLE, not about
+            # this row. A row can be rejected for its own reasons and still
+            # be evidence that the vehicle passed that kilometre, so the
+            # chain advances regardless of what happens to this row below.
+            last = previous_odometer.get(plate)
+            travelled = (
+                None
+                if last is None or row.odometer_km is None
+                else row.odometer_km - last
+            )
+            if plate and row.odometer_km is not None:
+                previous_odometer[plate] = row.odometer_km
+
             if not folio or folio in seen:
                 counter.rejected += 1
                 etl_run.reject("stg_fuel_load", folio, "deduplicate",
@@ -321,14 +337,9 @@ def _transform_fuel_loads(etl_run, valid_vehicles, valid_operators):
                                _payload(row, *fields))
                 continue
 
-            last = previous_odometer.get(plate)
-            travelled = None if last is None else row.odometer_km - last
             efficiency = None
-            if travelled is not None and travelled > 0:
+            if travelled is not None and travelled > 0 and row.liters:
                 efficiency = (travelled / row.liters).quantize(Decimal("0.01"))
-            # Update the chain before the outlier check: rejecting this row
-            # must not break the km_traveled computation for the next load.
-            previous_odometer[plate] = row.odometer_km
 
             if cleaning.is_efficiency_outlier(efficiency):
                 counter.rejected += 1

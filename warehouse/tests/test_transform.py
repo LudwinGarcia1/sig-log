@@ -63,7 +63,8 @@ class TransformTest(TestCase):
     def test_zero_litre_loads_are_rejected(self):
         self.assertGreater(
             EtlError.objects.filter(
-                run_id=self.etl_run.run_id, rule="is_positive"
+                run_id=self.etl_run.run_id, rule="is_positive",
+                source_table="stg_fuel_load",
             ).count(),
             0,
         )
@@ -71,7 +72,8 @@ class TransformTest(TestCase):
     def test_negative_freight_is_rejected(self):
         self.assertGreater(
             EtlError.objects.filter(
-                run_id=self.etl_run.run_id, rule="is_non_negative"
+                run_id=self.etl_run.run_id, rule="is_non_negative",
+                source_table="stg_delivery",
             ).count(),
             0,
         )
@@ -100,6 +102,11 @@ class TransformTest(TestCase):
     def test_missing_cause_on_a_late_delivery_becomes_unspecified(self):
         late = [r for r in self.result["deliveries"] if r["is_delayed"] == 1]
         self.assertTrue(all(r["delay_cause_code"] for r in late))
+
+    def test_on_time_delivery_never_carries_a_cause(self):
+        on_time = [r for r in self.result["deliveries"] if r["is_delayed"] == 0]
+        self.assertGreater(len(on_time), 0)
+        self.assertTrue(all(r["delay_cause_code"] is None for r in on_time))
 
     def test_transform_logs_rejected_counts(self):
         log = EtlLog.objects.get(
@@ -201,3 +208,113 @@ class DeduplicationTest(TestCase):
             run_id=etl_run.run_id, rule="deduplicate", source_table="stg_customer",
         )
         self.assertEqual(rejected.count(), 1)
+
+
+class FuelOdometerChainTest(TestCase):
+    """Confirms the per-vehicle odometer chain advances for EVERY row —
+    including one rejected for its own reasons — not just the ones that
+    reach the clean set.
+
+    Three loads for one plate; the middle one has ``liters = 0`` and is
+    rejected under ``is_positive``. Its odometer reading is still real, so
+    the third load's ``km_traveled`` must be measured from the middle
+    load's odometer, not from the first load's now two-cycles-old (stale)
+    reading — measuring from the stale reading is exactly the bug this
+    guards against, since it silently inflates both ``km_traveled`` and
+    ``efficiency_km_per_liter`` for every load downstream of a rejection.
+    """
+
+    def setUp(self):
+        dw.StgVehicle.objects.create(
+            plate="FUEL001", economic_number="EC-0009", brand="Kenworth",
+            model="T680", year=2020, vehicle_type="TRUCK",
+            cargo_capacity_kg=Decimal("12000"),
+        )
+        dw.StgOperator.objects.create(
+            employee_number="OP-0009", first_name="Luis", last_name="Torres",
+            license_type="C", hire_date=datetime(2018, 1, 1).date(),
+        )
+
+        def _load(folio, day, odometer, liters):
+            return dw.StgFuelLoad.objects.create(
+                folio=folio, vehicle_plate="FUEL001", operator_number="OP-0009",
+                load_datetime=timezone.make_aware(datetime(2026, 1, day, 8, 0)),
+                liters=Decimal(liters), price_per_liter=Decimal("25.00"),
+                total_cost=Decimal(liters) * Decimal("25.00"),
+                odometer_km=Decimal(odometer),
+            )
+
+        _load("COM-CHAIN-1", 1, "10000", "100")   # first: no prior reading
+        _load("COM-CHAIN-2", 2, "10300", "0")     # middle: rejected, is_positive
+        _load("COM-CHAIN-3", 3, "11000", "100")   # third: must chain off #2
+
+    def test_km_traveled_chains_off_the_rejected_rows_real_odometer(self):
+        etl_run = EtlRun(full=True)
+        result = run_transform(etl_run)
+
+        middle_rejected = EtlError.objects.filter(
+            run_id=etl_run.run_id, rule="is_positive",
+            source_table="stg_fuel_load", source_pk="COM-CHAIN-2",
+        )
+        self.assertTrue(middle_rejected.exists())
+
+        clean = {row["folio"]: row for row in result["fuel_loads"]}
+        self.assertNotIn("COM-CHAIN-2", clean)
+
+        third = clean["COM-CHAIN-3"]
+        self.assertEqual(third["km_traveled"], Decimal("700"))       # 11000 - 10300
+        self.assertNotEqual(third["km_traveled"], Decimal("1000"))   # 11000 - 10000 (stale)
+        self.assertEqual(third["efficiency_km_per_liter"], Decimal("7.00"))
+
+
+class ReferentialIntegrityTest(TestCase):
+    """Confirms ``referential_integrity`` actually rejects a delivery whose
+    ``customer_code`` does not exist among the transformed customers, and
+    that the folio never reaches the clean set.
+
+    This guard sits directly upstream of Task 12's surrogate-key resolution:
+    a latent bug here would crash the load phase, not merely produce bad
+    data, so it deserves a direct positive-firing test rather than relying
+    on incidental coverage from the seed generator (which never produces a
+    dangling foreign key).
+    """
+
+    def test_delivery_with_unknown_customer_is_rejected_and_excluded(self):
+        dw.StgVehicle.objects.create(
+            plate="XYZ9999", economic_number="EC-0002", brand="Ford",
+            model="Transit", year=2021, vehicle_type="VAN",
+            cargo_capacity_kg=Decimal("1500"),
+        )
+        dw.StgOperator.objects.create(
+            employee_number="OP-0002", first_name="Ana", last_name="Lopez",
+            license_type="B", hire_date=datetime(2019, 1, 1).date(),
+        )
+        dw.StgRoute.objects.create(
+            code="RUT-002", name="Puebla - Queretaro", origin_city="Puebla",
+            destination_city="Queretaro", distance_km=Decimal("120"),
+        )
+        # Deliberately no StgCustomer row exists for "CLI-9999".
+
+        departure = timezone.make_aware(datetime(2026, 2, 1, 9, 0))
+        dw.StgDelivery.objects.create(
+            folio="ENT-ORPHAN-01", customer_code="CLI-9999", route_code="RUT-002",
+            vehicle_plate="XYZ9999", operator_number="OP-0002",
+            scheduled_departure=departure, actual_departure=departure,
+            scheduled_arrival=departure + timedelta(hours=1),
+            actual_arrival=departure + timedelta(hours=1, minutes=5),
+            cargo_weight_kg=Decimal("300"), packages_count=1,
+            freight_cost=Decimal("500.00"),
+        )
+
+        etl_run = EtlRun(full=True)
+        result = run_transform(etl_run)
+
+        self.assertNotIn(
+            "ENT-ORPHAN-01", {row["folio"] for row in result["deliveries"]}
+        )
+        self.assertTrue(
+            EtlError.objects.filter(
+                run_id=etl_run.run_id, rule="referential_integrity",
+                source_table="stg_delivery", source_pk="ENT-ORPHAN-01",
+            ).exists()
+        )
