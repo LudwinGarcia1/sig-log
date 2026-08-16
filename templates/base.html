@@ -1,4 +1,5 @@
 {% load static %}
+{% load crud_tags %}
 <!doctype html>
 <html lang="es">
 <head>
@@ -18,9 +19,12 @@
     <div class="collapse navbar-collapse" id="nav">
       <ul class="navbar-nav me-auto">
         {% for url_name, label, emphasised in nav_items %}
+        {% nav_url url_name as href %}
+        {% if href %}
         <li class="nav-item">
-          <a class="nav-link {% if emphasised %}fw-semibold{% endif %}" href="{% url url_name %}">{{ label }}</a>
+          <a class="nav-link {% if emphasised %}fw-semibold{% endif %}" href="{{ href }}">{{ label }}</a>
         </li>
+        {% endif %}
         {% endfor %}
       </ul>
     </div>

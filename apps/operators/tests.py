@@ -32,3 +32,11 @@ class OperatorBehaviourTest(TestCase):
 
     def test_seniority_years_counts_completed_years(self):
         self.assertEqual(self._operator().seniority_years, 3)
+
+    def test_seniority_years_is_zero_when_hired_today(self):
+        operator = self._operator(hire_date=date.today())
+        self.assertEqual(operator.seniority_years, 0)
+
+    def test_seniority_years_is_not_negative_when_hire_date_is_future(self):
+        operator = self._operator(hire_date=date.today() + timedelta(days=30))
+        self.assertEqual(operator.seniority_years, 0)
