@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load crud_tags %}
+{% block title %}{{ crud_label_plural }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">{{ crud_label_plural }}</h1>
+  <a class="btn btn-primary" href="{% url crud_slug|add:'_create' %}">Nuevo {{ crud_label|lower }}</a>
+</div>
+
+{% if crud_searchable %}
+<form class="row g-2 mb-3" method="get">
+  <div class="col-auto">
+    <input type="search" name="q" value="{{ search_term }}" class="form-control"
+           placeholder="Buscar {{ crud_label_plural|lower }}…">
+  </div>
+  <div class="col-auto"><button class="btn btn-outline-secondary">Buscar</button></div>
+</form>
+{% endif %}
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          {% for header in crud_headers %}<th>{{ header }}</th>{% endfor %}
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          {% for column in crud_columns %}<td>{% column_value row column %}</td>{% endfor %}
+          <td class="text-end text-nowrap">
+            <a class="btn btn-sm btn-outline-primary" href="{% url crud_slug|add:'_update' row.pk %}">Editar</a>
+            <a class="btn btn-sm btn-outline-danger" href="{% url crud_slug|add:'_delete' row.pk %}">Baja</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="{{ crud_columns|length|add:1 }}" class="text-center text-muted py-4">
+          Sin registros.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if is_paginated %}
+<nav class="mt-3">
+  <ul class="pagination">
+    {% if page_obj.has_previous %}
+      <li class="page-item"><a class="page-link" href="?q={{ search_term }}&page={{ page_obj.previous_page_number }}">Anterior</a></li>
+    {% endif %}
+    <li class="page-item disabled"><span class="page-link">
+      Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+    </span></li>
+    {% if page_obj.has_next %}
+      <li class="page-item"><a class="page-link" href="?q={{ search_term }}&page={{ page_obj.next_page_number }}">Siguiente</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}
