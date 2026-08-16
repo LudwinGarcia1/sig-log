@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "apps.vehicles",
     "apps.operators",
     "apps.routes",
+    "apps.deliveries",
 ]
 
 MIDDLEWARE = [

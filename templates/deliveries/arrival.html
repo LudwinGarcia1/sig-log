@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Registrar llegada{% endblock %}
+
+{% block content %}
+<h1 class="h4 mb-3">Registrar llegada — {{ delivery.folio }}</h1>
+<div class="card shadow-sm" style="max-width:44rem">
+  <div class="card-body">
+    <dl class="row mb-4">
+      <dt class="col-sm-4">Cliente</dt><dd class="col-sm-8">{{ delivery.customer }}</dd>
+      <dt class="col-sm-4">Ruta</dt><dd class="col-sm-8">{{ delivery.route }}</dd>
+      <dt class="col-sm-4">Llegada programada</dt>
+      <dd class="col-sm-8">{{ delivery.scheduled_arrival }}</dd>
+    </dl>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="row g-3">
+        {% for field in form %}
+        <div class="col-md-6">
+          <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      <p class="form-text mt-3">
+        Si la llegada excede en más de 15 minutos la hora programada, la causa es obligatoria.
+      </p>
+      <button class="btn btn-primary" type="submit">Cerrar entrega</button>
+      <a class="btn btn-link" href="{% url 'delivery_list' %}">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
