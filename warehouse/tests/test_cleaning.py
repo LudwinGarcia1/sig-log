@@ -44,11 +44,16 @@ class ValidationTest(SimpleTestCase):
     def test_dates_are_coherent_allows_a_missing_arrival(self):
         self.assertTrue(cleaning.dates_are_coherent(datetime(2026, 5, 1, 8, 0), None))
 
-    def test_efficiency_outliers_fall_outside_one_to_eight(self):
+    def test_efficiency_outliers_fall_outside_the_fleet_band(self):
         self.assertFalse(cleaning.is_efficiency_outlier(Decimal("3.20")))
         self.assertTrue(cleaning.is_efficiency_outlier(Decimal("0.40")))
         self.assertTrue(cleaning.is_efficiency_outlier(Decimal("14.00")))
         self.assertFalse(cleaning.is_efficiency_outlier(None))
+
+    def test_a_healthy_pickup_is_not_an_outlier(self):
+        self.assertFalse(cleaning.is_efficiency_outlier(Decimal("8.75")))
+        self.assertFalse(cleaning.is_efficiency_outlier(Decimal("11.99")))
+        self.assertTrue(cleaning.is_efficiency_outlier(Decimal("12.01")))
 
 
 class BucketTest(SimpleTestCase):

@@ -7,7 +7,13 @@ quarantined, and what makes the techniques of Unidad II auditable one by one.
 import re
 from decimal import Decimal
 
-EFFICIENCY_BOUNDS = (Decimal("1.0"), Decimal("8.0"))
+# The band must be wider than every vehicle type the fleet actually
+# contains, or the rule quarantines healthy data. BASE_EFFICIENCY tops out
+# at 8.10 km/L for a PICKUP and the generator varies it by up to +8%, so a
+# sound pickup reaches 8.75. Loaded trailers sit near 2.2 km/L, so 1.0 is a
+# safe floor. 12.0 still catches the real anomalies, which read in the
+# hundreds.
+EFFICIENCY_BOUNDS = (Decimal("1.0"), Decimal("12.0"))
 UNKNOWN_TEXT = "DESCONOCIDA"
 UNSPECIFIED_CAUSE = "NO_ESPECIFICADA"
 
