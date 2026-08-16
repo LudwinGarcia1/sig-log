@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "apps.core",
     "apps.customers",
+    "apps.vehicles",
     "apps.operators",
     "apps.routes",
 ]
