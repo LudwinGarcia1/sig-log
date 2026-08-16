@@ -476,17 +476,22 @@ con `--full` es válido pero redundante.
 
 `python manage.py seed_demo --months 18 [--seed 42]`
 
-Volumen objetivo:
+Volumen real producido por la corrida de referencia (`--months 18 --seed 42`),
+medido contra la base de datos:
 
-| Entidad | Registros |
-|---|---|
-| Clientes | 120 |
-| Vehículos | 50 |
-| Operadores | 40 |
-| Rutas | 60 |
-| Entregas | ~15 000 |
-| Cargas de combustible | ~8 200 |
-| Mantenimientos | ~900 |
+| Entidad | Registros | Origen de la cifra |
+|---|---|---|
+| Clientes | 120 | fijo |
+| Vehículos | 50 | fijo |
+| Operadores | 40 | fijo |
+| Rutas | 60 | fijo (24 urbanas + 22 regionales + 14 foráneas) |
+| Entregas | 27 105 | volumen mensual por arquetipo de ruta |
+| Cargas de combustible | 3 633 | una cada 4 a 11 días por vehículo (72.7 por unidad) |
+| Mantenimientos | 565 | 11.3 por vehículo en 18 meses |
+
+Los tres últimos renglones se derivan de las fórmulas del generador, no se fijan
+a mano: cambiar los rangos de los arquetipos o el intervalo de recarga mueve las
+cifras. Una corrida completa tarda menos de diez segundos.
 
 Patrones sembrados de forma deliberada, para que los modelos tengan señal
 aprendible en lugar de ruido:
