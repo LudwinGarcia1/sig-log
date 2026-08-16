@@ -28,7 +28,11 @@ def complete_maintenance(maintenance, next_service_km=None):
             f"del vehículo ({vehicle.current_odometer_km} km)."
         )
 
-    target = next_service_km or (maintenance.odometer_km + SERVICE_INTERVAL_KM)
+    target = (
+        next_service_km
+        if next_service_km is not None
+        else maintenance.odometer_km + SERVICE_INTERVAL_KM
+    )
 
     maintenance.next_service_km = target
     maintenance.status = "COMPLETED"

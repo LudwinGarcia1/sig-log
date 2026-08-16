@@ -65,6 +65,11 @@ class CompleteMaintenanceTest(MaintenanceTestCase):
         self.vehicle.refresh_from_db()
         self.assertEqual(self.vehicle.next_service_km, Decimal("115000.00"))
 
+    def test_explicit_zero_next_service_km_is_honoured(self):
+        complete_maintenance(self._order(), next_service_km=Decimal("0.00"))
+        self.vehicle.refresh_from_db()
+        self.assertEqual(self.vehicle.next_service_km, Decimal("0.00"))
+
     def test_completing_twice_is_rejected(self):
         order = complete_maintenance(self._order())
         with self.assertRaises(MaintenanceError):
