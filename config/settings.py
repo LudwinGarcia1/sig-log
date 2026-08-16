@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "apps.deliveries",
     "apps.fuel",
     "apps.maintenance",
+    "seed",
 ]
 
 MIDDLEWARE = [
