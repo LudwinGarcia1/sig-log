@@ -2,6 +2,7 @@ from django import forms
 from django.test import TestCase, override_settings
 from django.urls import include, path, reverse
 
+from apps.core.navigation import NAV_ITEMS
 from apps.core.views import CrudConfig, HomeView
 from apps.core.tests.models import Widget
 
@@ -52,8 +53,21 @@ class CrudEngineTest(TestCase):
         super().tearDownClass()
 
     def setUp(self):
+        # This test overrides ROOT_URLCONF to a minimal urlconf that only
+        # knows about "home" and the widget routes. Other catalog modules
+        # register their own entries into the process-global NAV_ITEMS as
+        # soon as the real ROOT_URLCONF is imported (e.g. by URL system
+        # checks), and base.html renders every registered entry regardless
+        # of which urlconf is active. Isolate this test from that global
+        # state so it only exercises the routes it declares.
+        self._original_nav_items = list(NAV_ITEMS)
+        NAV_ITEMS.clear()
         Widget.objects.create(code="W-01", name="Tornillo", size="SMALL")
         Widget.objects.create(code="W-02", name="Palanca", size="LARGE")
+
+    def tearDown(self):
+        NAV_ITEMS.clear()
+        NAV_ITEMS.extend(self._original_nav_items)
 
     def test_urlpatterns_expose_four_named_routes(self):
         names = {pattern.name for pattern in WidgetCrud.urlpatterns()}

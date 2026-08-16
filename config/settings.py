@@ -19,6 +19,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.humanize",
     "apps.core",
+    "apps.customers",
+    "apps.operators",
+    "apps.routes",
 ]
 
 MIDDLEWARE = [
