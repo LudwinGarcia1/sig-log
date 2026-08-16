@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "apps.routes",
     "apps.deliveries",
     "apps.fuel",
+    "apps.maintenance",
 ]
 
 MIDDLEWARE = [
