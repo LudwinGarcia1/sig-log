@@ -18,6 +18,7 @@ from apps.routes.models import Route
 from apps.vehicles.models import Vehicle
 from seed.patterns import (
     BASE_EFFICIENCY,
+    CONGESTED_ZONES,
     DELAY_CAUSE_WEIGHTS,
     PEAK_HOURS,
     ROUTE_ARCHETYPES,
@@ -253,7 +254,12 @@ class Command(BaseCommand):
                     )
                     late = self.rng.random() < probability
                     if late:
-                        extra = self.rng.randint(16, int(planned * 0.6) + 40)
+                        expected = 18 + 0.22 * planned
+                        if hour in PEAK_HOURS:
+                            expected *= 1.45
+                        if route.zone in CONGESTED_ZONES:
+                            expected *= 1.30
+                        extra = max(int(self.rng.gauss(expected, expected * 0.22)), 16)
                     else:
                         extra = self.rng.randint(-int(planned * 0.10) - 5, 14)
 
