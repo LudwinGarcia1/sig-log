@@ -376,3 +376,16 @@ eficiente: hace falta un servidor WSGI (Gunicorn, uWSGI) detrás de un proxy
 inverso. Configurar ese servidor y el resto de la infraestructura de
 despliegue (contenedores, balanceo, TLS) queda **fuera del alcance de este
 proyecto** (ver `docs/superpowers/specs/2026-08-16-sig-log-design.md`, §2.1).
+
+**Sobre `SECRET_KEY` y `DEBUG` por defecto.** `config/settings.py` define
+`SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "insecure-development-key")` y
+`DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"`: si las variables de
+entorno correspondientes no están presentes, el proyecto arranca con una
+clave de desarrollo fija (no secreta) y con `DEBUG` activado. Esto es
+intencional para que `git clone` + `pip install` + `migrate` funcione sin
+configuración adicional en un entorno de evaluación académica, pero es
+exactamente lo opuesto de lo que se necesita en cualquier despliegue real:
+antes de exponer el proyecto fuera de `localhost`, hay que definir
+`DJANGO_SECRET_KEY` (un valor generado, no el de ejemplo) y
+`DJANGO_DEBUG=False` explícitamente en el entorno del servidor — de lo
+contrario, el valor por defecto queda activo en silencio.

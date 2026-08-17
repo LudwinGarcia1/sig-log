@@ -113,7 +113,7 @@ se descarta en silencio** — cada fila rechazada se escribe en
 |---|---|---|---|
 | Normalización (`normalize_text`, `normalize_code`, `normalize_plate`) | Espacios sobrantes, minúsculas, placas con guiones | Corrige el valor; no rechaza filas | 0 (corrección silenciosa, no cuarentena) |
 | Tratamiento de nulos (`default_if_blank`) | Ciudad vacía en clientes o rutas | La reemplaza por `DESCONOCIDA`; en causa de retraso ausente, por `NO_ESPECIFICADA` | 0 (sustitución, no rechazo) |
-| Deduplicación | Clave natural repetida (folio, código, placa) dentro de la misma extracción | Conserva el registro más reciente por `extracted_at`; rechaza los demás | incluido en el desglose por regla si aplica; en la corrida de referencia no hubo duplicados que forzaran rechazo |
+| Deduplicación | Clave natural repetida (folio, código, placa) dentro de la misma extracción | Conserva el registro más reciente por `extracted_at` en siete de las ocho tablas de staging; rechaza los demás. `stg_fuel_load` es la excepción: ordena por `(vehicle_plate, load_datetime)` en lugar de `extracted_at`, para no romper la cadena de odómetro por vehículo | incluido en el desglose por regla si aplica; en la corrida de referencia no hubo duplicados que forzaran rechazo |
 | Validación de rango (`is_positive`, `is_non_negative`) | Litros ≤ 0, distancia ≤ 0, flete o costo negativo | Rechaza la fila | **`is_positive`: 10** (cargas de combustible con litros ≤ 0) · **`is_non_negative`: 8** (entregas con flete negativo) |
 | Coherencia temporal (`dates_are_coherent`) | Llegada real anterior a la salida | Rechaza la fila | **272** (entregas) |
 | Integridad referencial | La entrega, carga o mantenimiento referencia un cliente, ruta, vehículo, operador o causa que no existe en la extracción limpia | Rechaza la fila | 0 en la corrida de referencia (la generación sintética no produce huérfanos) |
@@ -154,7 +154,7 @@ el mismo cambio, porque ambos valores están acoplados por este argumento.
 | Tamaño de lote (`BATCH_SIZE`) | 2000 filas | `warehouse/etl/extract.py`, `warehouse/etl/load.py` |
 | Tipo de SCD en dimensiones | Tipo 1 (sobrescritura) | `warehouse/etl/load.py::_load_dimension` |
 | `EFFICIENCY_BOUNDS` | `[1.0, 12.0]` km/L | `warehouse/etl/cleaning.py` |
-| `DELAY_TOLERANCE_MINUTES` | 15 minutos | `apps/deliveries/models.py`, `warehouse/etl/transform.py` (duplicado deliberadamente en ambos lugares, ver sección 5) |
+| `DELAY_TOLERANCE_MINUTES` | 15 minutos | `apps/deliveries/models.py`, `warehouse/etl/transform.py`, `seed/management/commands/seed_demo.py` (duplicado deliberadamente en los tres lugares, ver sección 4.1) |
 | Conexión a la base | `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` | `.env`, leídos en `config/settings.py` |
 | Flags de `run_etl` | `--full`, `--rebuild` | `warehouse/management/commands/run_etl.py` |
 

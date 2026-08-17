@@ -25,7 +25,7 @@ ese almacén.
 | Python | 3.13.14 |
 | PostgreSQL | 18 |
 | git | 2.52.0 |
-| Django | 5.1.2 (instalado vía `requirements.txt`) |
+| Django | 5.2.17 (instalado vía `requirements.txt`) |
 
 ## Instalación en cinco pasos
 
@@ -34,11 +34,12 @@ git clone <url> SIG_LOG; cd SIG_LOG
 python -m venv .venv; .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 Copy-Item .env.example .env       # y edita DB_PASSWORD
-& "C:\Program Files\PostgreSQL\18\bin\createdb.exe" -U postgres -h localhost siglog
 ```
 
 El proyecto se conecta a PostgreSQL como un rol dedicado (`siglog`), nunca como
-`postgres`. Créalo antes de migrar:
+`postgres`. Créalo antes de migrar (usando `psql -U postgres` u otra herramienta
+administrativa, no `createdb`, porque el rol y la base los crea el bloque SQL
+de abajo, no el usuario `postgres`):
 
 ```sql
 CREATE ROLE siglog LOGIN PASSWORD '...' CREATEDB;
@@ -88,7 +89,7 @@ SIG_LOG/
 │   └── wsgi.py
 │
 ├── apps/
-│   ├── core/               BaseModel, CrudViewSet, navegación, plantillas base
+│   ├── core/               BaseModel, CrudConfig, navegación, plantillas base
 │   ├── customers/          M1  Clientes
 │   ├── vehicles/           M2  Vehículos
 │   ├── operators/          M3  Operadores

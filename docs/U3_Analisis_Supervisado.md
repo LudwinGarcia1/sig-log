@@ -112,11 +112,11 @@ Sobre el conjunto de 26,886 entregas cerradas: 21,508 de entrenamiento y
 
 | Algoritmo | Exactitud | Precisión | Sensibilidad | F1 | ROC-AUC | F1 (VC 5 pliegues) |
 |---|---|---|---|---|---|---|
-| **Regresión logística** (ganador) | 0.7527 | 0.6786 | 0.9180 | **0.7804** | 0.7861 | 0.7797 |
-| Random Forest | 0.7512 | 0.6783 | 0.9134 | 0.7785 | 0.7774 | 0.7789 |
+| **Regresión logística** (ganador) | 0.7525 | 0.6795 | 0.9141 | **0.7795** | 0.7844 | 0.7804 |
+| Random Forest | 0.7507 | 0.6792 | 0.9079 | 0.7771 | 0.7753 | 0.7789 |
 
-La regresión logística gana por F1 (0.7804 contra 0.7785) — un margen
-pequeño pero consistente también en la validación cruzada (0.7797 contra
+La regresión logística gana por F1 (0.7795 contra 0.7771) — un margen
+pequeño pero consistente también en la validación cruzada (0.7804 contra
 0.7789), lo que descarta que la diferencia sea ruido de una sola partición.
 Random Forest no aporta una ventaja medible: las interacciones que se
 sembraron en el generador ya son separables con las variables categóricas
@@ -131,8 +131,8 @@ casos de prueba):
 
 ```
                  Predicho: a tiempo   Predicho: con retraso
-Real: a tiempo          1685                 1119
-Real: con retraso        211                 2363
+Real: a tiempo          1694                 1110
+Real: con retraso        221                 2353
 ```
 
 ![Matriz de confusión](../static/ml/confusion_matrix.png)
@@ -141,17 +141,17 @@ Real: con retraso        211                 2363
 
 | Métrica | Valor |
 |---|---|
-| **MSE** (error cuadrático medio) | **787.45** |
-| RMSE | 28.06 minutos |
-| **MAE** (error absoluto medio) | **20.93 minutos** |
-| R² | 0.2239 |
+| **MSE** (error cuadrático medio) | **802.69** |
+| RMSE | 28.33 minutos |
+| **MAE** (error absoluto medio) | **20.91 minutos** |
+| R² | 0.2265 |
 
 ![Residuales de la regresión lineal](../static/ml/residuals.png)
 
-Un MAE de 20.93 minutos significa que, en promedio, la predicción se
+Un MAE de 20.91 minutos significa que, en promedio, la predicción se
 equivoca por poco más de 20 minutos sobre el tiempo de retraso real — una
 referencia útil para planeación operativa (por ejemplo, avisar a un cliente
-con un margen razonable), aunque no una cifra exacta. El R² de 0.22
+con un margen razonable), aunque no una cifra exacta. El R² de 0.23
 confirma que el modelo lineal captura una fracción real pero modesta de la
 varianza: el retraso tiene un componente sistemático (zona, hora, tipo de
 ruta) y un componente que la regresión lineal no puede explicar
@@ -163,59 +163,67 @@ introduce con su componente aleatorio (`self.rng.gauss(...)` en
 
 | # | Variable | Peso |
 |---|---|---|
-| 1 | `route_code_RUT-054` | 0.7554 |
-| 2 | `route_type_LOCAL` | 0.6632 |
-| 3 | `distance_range_CORTA` | 0.6632 |
-| 4 | `route_type_FORANEA` | 0.5468 |
-| 5 | `distance_range_LARGA` | 0.5468 |
-| 6 | `route_type_REGIONAL` | 0.4869 |
-| 7 | `distance_range_MEDIA` | 0.4869 |
-| 8 | `route_code_RUT-046` | 0.4710 |
-| 9 | `route_code_RUT-032` | 0.4243 |
-| 10 | `route_code_RUT-037` | 0.3952 |
-| 11 | `route_code_RUT-060` | 0.3876 |
-| 12 | `route_code_RUT-048` | 0.3620 |
-| 13 | `zone_METROPOLITANA` | 0.3456 |
-| 14 | `route_code_RUT-057` | 0.3425 |
-| 15 | `zone_ORIENTE` | 0.3176 |
+| 1 | `route_code_RUT-054` | 0.6949 |
+| 2 | `route_type_LOCAL` | 0.6688 |
+| 3 | `distance_range_CORTA` | 0.6688 |
+| 4 | `route_type_FORANEA` | 0.5541 |
+| 5 | `distance_range_LARGA` | 0.5541 |
+| 6 | `route_code_RUT-046` | 0.5186 |
+| 7 | `route_type_REGIONAL` | 0.4875 |
+| 8 | `distance_range_MEDIA` | 0.4875 |
+| 9 | `route_code_RUT-048` | 0.4382 |
+| 10 | `route_code_RUT-032` | 0.4297 |
+| 11 | `route_code_RUT-059` | 0.4272 |
+| 12 | `route_code_RUT-060` | 0.4003 |
+| 13 | `route_code_RUT-037` | 0.3682 |
+| 14 | `route_code_RUT-053` | 0.3540 |
+| 15 | `zone_METROPOLITANA` | 0.3469 |
+
+`route_type_LOCAL`/`distance_range_CORTA` (puestos 2-3), `route_type_FORANEA`/
+`distance_range_LARGA` (puestos 4-5) y `route_type_REGIONAL`/`distance_range_MEDIA`
+(puestos 7-8) comparten exactamente el mismo peso porque son perfectamente
+colineales por construcción: cada arquetipo de ruta fija a la vez su tipo y
+su rango de distancia, así que estas seis columnas codifican en realidad
+tres variables independientes, no seis.
 
 ## 4. Interpretación
 
-El modelo ganador recuperó exactamente el patrón que el generador sembró
+El modelo ganador recuperó buena parte del patrón que el generador sembró
 (`seed/patterns.py::delay_probability`): la identidad de la ruta y su tipo
 (`route_type_LOCAL`/`distance_range_CORTA` para rutas urbanas cortas, y sus
-opuestas para las foráneas largas) dominan la importancia de variables, y
-las zonas congestionadas (`METROPOLITANA`, `ORIENTE`) aparecen explícitamente
-entre las quince más influyentes — justo las dos zonas a las que el
-generador les suma +0.52 de probabilidad base de retraso. Esto confirma que
-el clasificador no está memorizando ruido: está reconstruyendo, a partir de
-variables conocidas antes de la salida, la estructura causal que el
-generador diseñó.
+opuestas para las foráneas largas) dominan la importancia de variables. De
+las dos zonas congestionadas que el generador diseñó, solo
+`zone_METROPOLITANA` aparece entre las quince variables más influyentes
+(puesto 15); `zone_ORIENTE` queda justo fuera, en el puesto 17. Esto sigue
+siendo consistente con que el clasificador no memoriza ruido — reconstruye,
+a partir de variables conocidas antes de la salida, buena parte de la
+estructura causal que el generador diseñó —, aunque la señal de zona no es
+tan dominante como para desplazar a las variables de ruta específica.
 
-**Por qué la precisión (0.6786) no puede ser mucho más alta con este
-algoritmo, y no es una limitación del modelo.** La tasa de retraso medida en
-las zonas congestionadas (METROPOLITANA, ORIENTE) es **0.6792** sobre
-17,586 entregas — es decir, si el clasificador aprendiera perfectamente
-"toda entrega en zona congestionada se marca como retrasada" (que es
-esencialmente lo que hace, dado el peso de esas variables), la fracción de
-sus predicciones positivas que en efecto llegan tarde estaría acotada por
-esa misma proporción base: 0.6792. La precisión obtenida, 0.6786, es
-prácticamente idéntica a ese límite. Formalmente: el resultado de una
-entrega en zona congestionada se comporta como un ensayo de Bernoulli con
-probabilidad de éxito (retraso) p ≈ 0.679; ningún clasificador que prediga
-"retraso" para ese grupo puede lograr una precisión de clase positiva mayor
-a p, porque p **es**, por definición, la proporción de positivos reales
-dentro del grupo que se está prediciendo como positivo. La precisión no
-subió más no porque el algoritmo sea débil, sino porque el techo lo impone
-la propia tasa base de la señal que se sembró — es un techo estructural de
-los datos, no una limitación del algoritmo. Esta es la observación más
-importante de este documento: sube el umbral de F1 exigido y el modelo
-seguiría sin poder superar ese techo de precisión mientras la tasa base de
-la zona sea 0.679, salvo que se introdujeran variables adicionales capaces
-de discriminar, dentro de la propia zona congestionada, cuáles entregas sí
+**Por qué la precisión (0.6795) no puede ser mucho más alta con este
+algoritmo, y por qué esto es una aproximación, no un teorema.** La tasa de
+retraso medida en las zonas congestionadas (METROPOLITANA, ORIENTE) es
+**0.6792** sobre 17,586 entregas. La intuición es que, si el clasificador
+aprendiera aproximadamente "toda entrega en zona congestionada se marca como
+retrasada" (que es en buena medida lo que hace, dado el peso de esas
+variables), la fracción de sus predicciones positivas que en efecto llegan
+tarde rondaría esa misma proporción base: 0.6792. Esto no es una cota
+formal — el clasificador no predice positivo exactamente sobre el conjunto
+de zona congestionada, sino sobre una combinación de variables que se le
+aproxima —, por lo que puede quedar ligeramente por encima o por debajo de
+ella. La precisión obtenida, 0.6795, confirma justo eso: la tasa base
+funciona como un techo práctico y el modelo aterriza esencialmente sobre él,
+en vez de sobre él como límite absoluto. La precisión no subió más no porque
+el algoritmo sea débil, sino porque la señal misma que se sembró impone un
+techo aproximado — es una característica estructural de los datos, no una
+limitación del algoritmo. Esta es la observación más importante de este
+documento: sube el umbral de F1 exigido y el modelo seguiría sin poder
+superar por mucho ese techo de precisión mientras la tasa base de la zona
+sea ~0.679, salvo que se introdujeran variables adicionales capaces de
+discriminar, dentro de la propia zona congestionada, cuáles entregas sí
 llegarán a tiempo.
 
-La sensibilidad alta (0.9180) es la contraparte esperada de ese mismo
+La sensibilidad alta (0.9141) es la contraparte esperada de ese mismo
 efecto: el modelo prefiere marcar como "con retraso" a casi toda entrega en
 zona congestionada, lo que atrapa a la gran mayoría de los retrasos reales
 (sensibilidad alta) al costo de marcar también como retrasadas a varias

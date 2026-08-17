@@ -253,11 +253,11 @@ inmediata (programar el servicio), no una decisión de política como en las
 demás preguntas.
 
 **P8 · ¿Es posible predecir si una entrega llegará tarde?** Sí, con un F1
-de 0.7804 sobre el conjunto de prueba (regresión logística, ganadora sobre
-Random Forest) y una sensibilidad de 0.918 — el modelo atrapa el 92% de los
-retrasos reales. Su precisión (0.6786) está acotada por la tasa base de
-retraso en zona congestionada (0.6792): es un techo estructural de los
-datos, no una debilidad del modelo (análisis completo en
+de 0.7795 sobre el conjunto de prueba (regresión logística, ganadora sobre
+Random Forest) y una sensibilidad de 0.9141 — el modelo atrapa el 91% de los
+retrasos reales. Su precisión (0.6795) queda prácticamente en la tasa base
+de retraso en zona congestionada (0.6792), que funciona como un techo
+práctico más que como una debilidad del modelo (análisis completo en
 `docs/U3_Analisis_Supervisado.md`, sección 4). **Acción:** el modelo es útil
 como alerta temprana (¿esta entrega necesita seguimiento proactivo?), no
 como una promesa exacta de horario.
