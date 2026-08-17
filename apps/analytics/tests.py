@@ -1,8 +1,44 @@
+import tempfile
+from pathlib import Path
+from unittest import mock
+
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
 from apps.analytics import queries
+from ml import evaluation, supervised, unsupervised
+
+
+def _patch_ml_artifact_paths():
+    """Redirect every ml artifact/figure path to a scratch directory.
+
+    ``train_models`` and the model-loading helpers resolve these paths as
+    module attributes at call time, so patching the modules is enough to
+    keep the test suite from ever overwriting the production models
+    trained on the full warehouse. Returns ``(patches, tmp_dir)`` — the
+    caller starts the patches and, once done, stops them and cleans up
+    ``tmp_dir``.
+    """
+    tmp_dir = tempfile.TemporaryDirectory()
+    tmp_path = Path(tmp_dir.name)
+    artifact_dir = tmp_path / "artifacts"
+    figure_dir = tmp_path / "static_ml"
+    patches = [
+        mock.patch.object(supervised, "ARTIFACT_DIR", artifact_dir),
+        mock.patch.object(
+            supervised, "CLASSIFIER_PATH", artifact_dir / "delay_classifier.joblib"
+        ),
+        mock.patch.object(
+            supervised, "REGRESSOR_PATH", artifact_dir / "delay_regressor.joblib"
+        ),
+        mock.patch.object(
+            unsupervised, "CLUSTER_PATH", artifact_dir / "route_clusters.joblib"
+        ),
+        mock.patch.object(evaluation, "FIGURE_DIR", figure_dir),
+        mock.patch.object(evaluation, "METRICS_PATH", artifact_dir / "metrics.json"),
+    ]
+    return patches, tmp_dir
 
 
 class AnalyticsQueriesTest(TestCase):
@@ -155,6 +191,22 @@ class OperationsViewTest(TestCase):
 
 class PredictionViewTest(TestCase):
     @classmethod
+    def setUpClass(cls):
+        # Patches must be live before setUpTestData() runs train_models(),
+        # and must stay live for every test method in the class.
+        cls._ml_patches, cls._ml_tmp_dir = _patch_ml_artifact_paths()
+        for patcher in cls._ml_patches:
+            patcher.start()
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        for patcher in cls._ml_patches:
+            patcher.stop()
+        cls._ml_tmp_dir.cleanup()
+
+    @classmethod
     def setUpTestData(cls):
         call_command("loaddata", "delay_causes", verbosity=0)
         call_command("seed_demo", months=4, seed=42, verbosity=0)
@@ -208,7 +260,15 @@ class UntrainedModelTest(TestCase):
     """
 
     def setUp(self):
-        from ml import supervised, unsupervised
+        # Point the artifact paths at a scratch directory before deleting
+        # anything: this test must never touch the real, trained models on
+        # disk, only prove the views degrade gracefully when nothing is
+        # trained yet.
+        patches, tmp_dir = _patch_ml_artifact_paths()
+        for patcher in patches:
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        self.addCleanup(tmp_dir.cleanup)
 
         for path in (
             supervised.CLASSIFIER_PATH, supervised.REGRESSOR_PATH,

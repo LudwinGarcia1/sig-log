@@ -67,10 +67,12 @@ genera 18 meses de operación sintética con semilla fija (reproducible);
 `run_etl --rebuild` puebla el almacén desde cero; `train_models` entrena los
 cuatro modelos de minería y genera sus figuras de diagnóstico.
 
-**Advertencia:** `python manage.py test` vuelve a entrenar los modelos con los
-datos de prueba y sobrescribe `ml/artifacts/` y `static/ml/`. Si corriste las
-pruebas después de `train_models`, repite `python manage.py train_models`
-antes de usar el dashboard. Detalle en
+`python manage.py test` ya no toca `ml/artifacts/` ni `static/ml/`: las
+pruebas que entrenan modelos redirigen esos artefactos a un directorio
+temporal (`tempfile.TemporaryDirectory` + `unittest.mock.patch` sobre las
+rutas de `ml.supervised`, `ml.unsupervised` y `ml.evaluation`), así que
+correr la suite completa no sobrescribe los modelos de producción entrenados
+sobre las 26,886 entregas reales. Detalle en
 [`docs/Manual_Tecnico.md`](docs/Manual_Tecnico.md#10-mantenimiento-y-solución-de-problemas).
 
 ## Estructura del repositorio

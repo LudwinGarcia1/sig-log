@@ -1,4 +1,7 @@
 import json
+import tempfile
+from pathlib import Path
+from unittest import mock
 
 from django.core.management import call_command
 from django.test import TestCase
@@ -7,6 +10,11 @@ from ml import evaluation, supervised, unsupervised
 
 
 class TrainModelsCommandTest(TestCase):
+    """Runs the real training command, but every artifact and figure lands
+    in a scratch directory instead of ml/artifacts/ and static/ml/ — those
+    hold the production models (trained on the full 26,886-delivery
+    warehouse) and must never be overwritten by the test suite."""
+
     @classmethod
     def setUpTestData(cls):
         call_command("loaddata", "delay_causes", verbosity=0)
@@ -14,15 +22,39 @@ class TrainModelsCommandTest(TestCase):
         call_command("run_etl", rebuild=True, verbosity=0)
 
     def setUp(self):
+        self._tmp_dir = tempfile.TemporaryDirectory()
+        tmp_path = Path(self._tmp_dir.name)
+        artifact_dir = tmp_path / "artifacts"
+        figure_dir = tmp_path / "static_ml"
+
+        self.classifier_path = artifact_dir / "delay_classifier.joblib"
+        self.regressor_path = artifact_dir / "delay_regressor.joblib"
+        self.cluster_path = artifact_dir / "route_clusters.joblib"
+        self.metrics_path = artifact_dir / "metrics.json"
+        self.figure_dir = figure_dir
+
+        patches = [
+            mock.patch.object(supervised, "ARTIFACT_DIR", artifact_dir),
+            mock.patch.object(supervised, "CLASSIFIER_PATH", self.classifier_path),
+            mock.patch.object(supervised, "REGRESSOR_PATH", self.regressor_path),
+            mock.patch.object(unsupervised, "CLUSTER_PATH", self.cluster_path),
+            mock.patch.object(evaluation, "FIGURE_DIR", self.figure_dir),
+            mock.patch.object(evaluation, "METRICS_PATH", self.metrics_path),
+        ]
+        for patcher in patches:
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        self.addCleanup(self._tmp_dir.cleanup)
+
         call_command("train_models", verbosity=0)
 
     def test_all_three_artifacts_are_written(self):
-        self.assertTrue(supervised.CLASSIFIER_PATH.exists())
-        self.assertTrue(supervised.REGRESSOR_PATH.exists())
-        self.assertTrue(unsupervised.CLUSTER_PATH.exists())
+        self.assertTrue(self.classifier_path.exists())
+        self.assertTrue(self.regressor_path.exists())
+        self.assertTrue(self.cluster_path.exists())
 
     def test_metrics_file_records_both_units(self):
-        payload = json.loads(evaluation.METRICS_PATH.read_text(encoding="utf-8"))
+        payload = json.loads(self.metrics_path.read_text(encoding="utf-8"))
         self.assertIn("classification", payload)
         self.assertIn("regression", payload)
         self.assertIn("clustering", payload)
@@ -40,7 +72,7 @@ class TrainModelsCommandTest(TestCase):
             "confusion_matrix.png", "residuals.png",
             "elbow.png", "silhouette.png", "pca_scatter.png",
         ):
-            self.assertTrue((evaluation.FIGURE_DIR / filename).exists(), filename)
+            self.assertTrue((self.figure_dir / filename).exists(), filename)
 
     def test_saved_classifier_can_score_a_new_delivery(self):
         result = supervised.predict_delay({

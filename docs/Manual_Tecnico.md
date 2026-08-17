@@ -342,15 +342,20 @@ python manage.py test
 | `ml/tests/*` (37 pruebas) | Ausencia de columnas con fuga de datos, entrenamiento de ambos clasificadores y del regresor, barrido de k y elección del conglomerado, ejecución completa de `train_models`. |
 | `seed/tests.py` (13 pruebas) | Volumen generado y que las tasas de retraso caigan dentro del rango realista que los patrones sembrados prometen. |
 
-**Advertencia importante:** correr la suite de pruebas vuelve a ejecutar
-`train_models` (`TrainModelsCommandTest`), y ese comando escribe sobre
-`ml/artifacts/` y `static/ml/` —rutas del sistema de archivos, no la base de
-datos de pruebas—. Por lo tanto, **`python manage.py test` sobrescribe en
-silencio los modelos de producción** con unos entrenados sobre los tres o
-cuatro meses de datos de la fixture de prueba, y el dashboard mostrará
-después métricas peores que las que citan estos documentos. El remedio es
-siempre el mismo: **vuelve a ejecutar `python manage.py train_models`
-después de correr las pruebas.**
+**Sobre `train_models` en las pruebas:** `TrainModelsCommandTest`,
+`PredictionViewTest` y `UntrainedModelTest` (en `apps/analytics/tests.py`)
+también ejecutan `train_models` o inspeccionan sus artefactos, y ese comando
+escribe sobre rutas del sistema de archivos (`ml/artifacts/`, `static/ml/`),
+no la base de datos de pruebas. Antes esto hacía que `python manage.py test`
+sobrescribiera en silencio los modelos de producción con unos entrenados
+sobre los tres o cuatro meses de datos de la fixture de prueba. Ya no: cada
+una de esas pruebas usa `tempfile.TemporaryDirectory()` junto con
+`unittest.mock.patch.object` sobre `ml.supervised.ARTIFACT_DIR`,
+`CLASSIFIER_PATH`, `REGRESSOR_PATH`, `ml.unsupervised.CLUSTER_PATH` y
+`ml.evaluation.FIGURE_DIR`/`METRICS_PATH`, de modo que cada entrenamiento de
+prueba escribe en un directorio temporal y nunca en `ml/artifacts/` ni
+`static/ml/`. Correr la suite completa ya no requiere volver a entrenar
+después.
 
 ## 10. Mantenimiento y solución de problemas
 
@@ -359,7 +364,7 @@ después de correr las pruebas.**
 | `migrate` falla mencionando el esquema `dw` o `staging` | La migración `warehouse.0001_create_schemas` no corrió | Ejecuta `python manage.py migrate warehouse 0001_create_schemas` y luego `migrate` de nuevo |
 | El ETL rechaza (casi) todo | Regla de limpieza demasiado estricta para los datos reales, o catálogo de causas vacío | Revisa `dw.etl_error.rule` agrupado por conteo (consulta en la sección 6.3); si es `referential_integrity`, confirma que `loaddata delay_causes` corrió antes de `seed_demo` |
 | El clasificador queda por debajo del umbral de F1 (0.75) | La señal sembrada en el generador es insuficiente para el volumen actual | Ver la mitigación de la especificación de diseño (§14): ajustar los coeficientes de `seed/patterns.py::delay_probability` y documentar el ajuste |
-| El dashboard, predicción o conglomerados muestran datos obsoletos o peores de lo esperado | Se corrió `python manage.py test` después de `train_models` (ver sección 9) | `python manage.py train_models` |
+| El dashboard, predicción o conglomerados muestran datos obsoletos o peores de lo esperado | El almacén cambió (nuevo `run_etl`) desde el último `train_models`, o nunca se ejecutó | `python manage.py train_models` |
 | `Error: That port is already in use` al hacer `runserver` | Otro proceso ocupa el puerto 8000 | `python manage.py runserver 8001`, o cierra el proceso que ocupa el 8000 |
 | `django.db.utils.OperationalError: password authentication failed` | `.env` no coincide con las credenciales del rol `siglog` | Verifica `DB_USER`/`DB_PASSWORD` contra lo que creaste en PostgreSQL |
 

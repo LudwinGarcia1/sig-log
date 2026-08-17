@@ -141,6 +141,14 @@ quedó con 26 886 filas entrenadas y 5 378 de prueba.
 Esto está documentado también en `docs/Manual_Tecnico.md`, sección de solución
 de problemas.
 
+**Actualización:** esta limitación quedó corregida posteriormente. Las
+pruebas que entrenan modelos (`TrainModelsCommandTest`, `PredictionViewTest`
+y `UntrainedModelTest`) ahora redirigen `ARTIFACT_DIR`, `CLASSIFIER_PATH`,
+`REGRESSOR_PATH`, `CLUSTER_PATH`, `FIGURE_DIR` y `METRICS_PATH` a un
+directorio temporal vía `unittest.mock.patch.object`, así que
+`python manage.py test` ya no toca `ml/artifacts/` ni `static/ml/` y el
+remedio manual descrito arriba deja de ser necesario.
+
 ---
 
 ## 5. Estado final
