@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "apps.deliveries",
     "apps.fuel",
     "apps.maintenance",
+    "apps.analytics",
     "seed",
     "warehouse",
     "ml",
