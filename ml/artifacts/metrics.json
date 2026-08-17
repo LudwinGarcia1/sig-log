@@ -1,0 +1,275 @@
+{
+  "trained_at": "2026-08-17T04:10:47.773594+00:00",
+  "rows": 26886,
+  "classification": {
+    "best_name": "Regresión logística",
+    "best": {
+      "name": "Regresión logística",
+      "metrics": {
+        "accuracy": 0.7526961695797695,
+        "precision": 0.6786329695577255,
+        "recall": 0.918026418026418,
+        "f1": 0.7803830911492734,
+        "roc_auc": 0.7860967293920219
+      }
+    },
+    "candidates": [
+      {
+        "name": "Regresión logística",
+        "metrics": {
+          "accuracy": 0.7526961695797695,
+          "precision": 0.6786329695577255,
+          "recall": 0.918026418026418,
+          "f1": 0.7803830911492734,
+          "roc_auc": 0.7860967293920219
+        },
+        "cv_f1_mean": 0.7796914438721154,
+        "cv_f1_std": 0.004030945008787978
+      },
+      {
+        "name": "Random Forest",
+        "metrics": {
+          "accuracy": 0.7512086277426553,
+          "precision": 0.6783035199076746,
+          "recall": 0.9133644133644133,
+          "f1": 0.778476821192053,
+          "roc_auc": 0.777419066113788
+        },
+        "cv_f1_mean": 0.7788832404439449,
+        "cv_f1_std": 0.003974505482186305
+      }
+    ],
+    "confusion_matrix": [
+      [
+        1685,
+        1119
+      ],
+      [
+        211,
+        2363
+      ]
+    ],
+    "feature_importances": [
+      [
+        "cat__route_code_RUT-054",
+        0.7554253940627672
+      ],
+      [
+        "cat__route_type_LOCAL",
+        0.6632434101015218
+      ],
+      [
+        "cat__distance_range_CORTA",
+        0.6632434101015218
+      ],
+      [
+        "cat__route_type_FORANEA",
+        0.5467991050026078
+      ],
+      [
+        "cat__distance_range_LARGA",
+        0.5467991050026078
+      ],
+      [
+        "cat__route_type_REGIONAL",
+        0.486879558688354
+      ],
+      [
+        "cat__distance_range_MEDIA",
+        0.486879558688354
+      ],
+      [
+        "cat__route_code_RUT-046",
+        0.4710288397914276
+      ],
+      [
+        "cat__route_code_RUT-032",
+        0.42431993968810844
+      ],
+      [
+        "cat__route_code_RUT-037",
+        0.39521011485163154
+      ],
+      [
+        "cat__route_code_RUT-060",
+        0.3876230034337911
+      ],
+      [
+        "cat__route_code_RUT-048",
+        0.3619529413352031
+      ],
+      [
+        "cat__zone_METROPOLITANA",
+        0.3456087937351302
+      ],
+      [
+        "cat__route_code_RUT-057",
+        0.34253622457416916
+      ],
+      [
+        "cat__zone_ORIENTE",
+        0.31763461636640794
+      ],
+      [
+        "cat__route_code_RUT-049",
+        0.3144073184122364
+      ],
+      [
+        "cat__route_code_RUT-053",
+        0.31399357627666485
+      ],
+      [
+        "cat__is_weekend_true",
+        0.30723113856008005
+      ],
+      [
+        "cat__time_band_MANANA",
+        0.30259350172312277
+      ],
+      [
+        "cat__route_code_RUT-058",
+        0.2991752466265261
+      ],
+      [
+        "cat__vehicle_age_range_0-3",
+        0.2946707450573699
+      ],
+      [
+        "cat__route_code_RUT-028",
+        0.2914624802740267
+      ],
+      [
+        "cat__time_band_MEDIODIA",
+        0.2491221946502934
+      ],
+      [
+        "cat__zone_SUR",
+        0.2407937651264697
+      ],
+      [
+        "cat__route_code_RUT-016",
+        0.22464438505690082
+      ]
+    ],
+    "train_size": 21508,
+    "test_size": 5378
+  },
+  "regression": {
+    "metrics": {
+      "mse": 787.4519595561609,
+      "rmse": 28.061574431171195,
+      "mae": 20.927055062100955,
+      "r2": 0.22387947753129123
+    },
+    "train_size": 21508,
+    "test_size": 5378
+  },
+  "clustering": {
+    "k": 3,
+    "silhouette": 0.7381180690939613,
+    "davies_bouldin": 0.4034394334792873,
+    "explained_variance": [
+      0.7094321922127895,
+      0.17792104745171627
+    ],
+    "sweep": [
+      {
+        "k": 2,
+        "inertia": 121.07970504846374,
+        "silhouette": 0.6593997816475221,
+        "davies_bouldin": 0.5085060669095155
+      },
+      {
+        "k": 3,
+        "inertia": 31.55321897243769,
+        "silhouette": 0.7381180690939613,
+        "davies_bouldin": 0.4034394334792873
+      },
+      {
+        "k": 4,
+        "inertia": 16.665677090667934,
+        "silhouette": 0.737952669007038,
+        "davies_bouldin": 0.36975471535868176
+      },
+      {
+        "k": 5,
+        "inertia": 13.142395552650555,
+        "silhouette": 0.5883353144935684,
+        "davies_bouldin": 0.618670047013085
+      },
+      {
+        "k": 6,
+        "inertia": 10.126444439980492,
+        "silhouette": 0.553798949278226,
+        "davies_bouldin": 0.609873220961017
+      },
+      {
+        "k": 7,
+        "inertia": 7.714126270193792,
+        "silhouette": 0.542597565743957,
+        "davies_bouldin": 0.6377793906749785
+      },
+      {
+        "k": 8,
+        "inertia": 6.072614000672714,
+        "silhouette": 0.5310274291628786,
+        "davies_bouldin": 0.6439719413257963
+      },
+      {
+        "k": 9,
+        "inertia": 5.148535374466476,
+        "silhouette": 0.5377271076283953,
+        "davies_bouldin": 0.6431294187157048
+      },
+      {
+        "k": 10,
+        "inertia": 4.4198501785082485,
+        "silhouette": 0.5486496457230235,
+        "davies_bouldin": 0.5389257067943409
+      }
+    ],
+    "labels": {
+      "0": "Rutas urbanas congestionadas",
+      "1": "Rutas foráneas eficientes",
+      "2": "Rutas regionales estables"
+    },
+    "summary": [
+      {
+        "cluster": 0,
+        "distance_km": 28.0,
+        "avg_duration_min": 94.77236878290351,
+        "delay_rate": 0.6786472821945719,
+        "avg_delay_minutes": 38.41590074219249,
+        "avg_cargo_kg": 1235.8181705489549,
+        "avg_cost_per_km": 28.945075,
+        "monthly_shipments": 40.2662037037037,
+        "routes": 24,
+        "label": "Rutas urbanas congestionadas"
+      },
+      {
+        "cluster": 1,
+        "distance_km": 680.2142857142857,
+        "avg_duration_min": 524.1690598241311,
+        "delay_rate": 0.09614953640020664,
+        "avg_delay_minutes": 21.17659323409635,
+        "avg_cargo_kg": 5503.349215938491,
+        "avg_cost_per_km": 18.869107142857143,
+        "monthly_shipments": 5.889122315592904,
+        "routes": 14,
+        "label": "Rutas foráneas eficientes"
+      },
+      {
+        "cluster": 2,
+        "distance_km": 171.22727272727272,
+        "avg_duration_min": 172.15751111092067,
+        "delay_rate": 0.11417932082738269,
+        "avg_delay_minutes": 11.308647153509414,
+        "avg_cargo_kg": 3144.6708675687255,
+        "avg_cost_per_km": 20.612422727272726,
+        "monthly_shipments": 20.237373737373737,
+        "routes": 22,
+        "label": "Rutas regionales estables"
+      }
+    ]
+  }
+}
