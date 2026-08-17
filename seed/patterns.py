@@ -82,7 +82,7 @@ def delay_probability(zone, route_type, hour, weekday, vehicle_age):
     """
     probability = 0.03
     if zone in CONGESTED_ZONES:
-        probability += 0.55
+        probability += 0.52
     if hour in PEAK_HOURS:
         probability += 0.08
     if vehicle_age > 8:
