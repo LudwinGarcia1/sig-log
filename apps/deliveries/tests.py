@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.customers.models import Customer
@@ -97,6 +98,18 @@ class DeliveryBehaviourTest(DeliveryTestCase):
         )
         self.assertTrue(late.is_delayed)
 
+    def test_is_delayed_at_exactly_the_fifteen_minute_boundary(self):
+        exactly_on_tolerance = self._delivery(
+            folio="ENT-2026-00003",
+            actual_arrival=self.departure + timedelta(minutes=120 + 15),
+        )
+        self.assertFalse(exactly_on_tolerance.is_delayed)
+        one_minute_over = self._delivery(
+            folio="ENT-2026-00004",
+            actual_arrival=self.departure + timedelta(minutes=120 + 16),
+        )
+        self.assertTrue(one_minute_over.is_delayed)
+
     def test_transit_minutes_is_none_without_arrival(self):
         self.assertIsNone(self._delivery().transit_minutes)
 
@@ -150,3 +163,15 @@ class RegisterArrivalTest(DeliveryTestCase):
                 self.departure + timedelta(minutes=200),
                 cause_code="INEXISTENTE",
             )
+
+
+class DeliveryListArrivalButtonTest(DeliveryTestCase):
+    def test_open_delivery_shows_the_arrival_link(self):
+        delivery = self._delivery(status="IN_TRANSIT")
+        response = self.client.get(reverse("delivery_list"))
+        self.assertContains(response, reverse("delivery_arrival", args=[delivery.pk]))
+
+    def test_closed_delivery_does_not_show_the_arrival_link(self):
+        delivery = self._delivery(status="DELIVERED", actual_arrival=self.departure + timedelta(minutes=118))
+        response = self.client.get(reverse("delivery_list"))
+        self.assertNotContains(response, reverse("delivery_arrival", args=[delivery.pk]))

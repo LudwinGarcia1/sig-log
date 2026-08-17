@@ -37,11 +37,24 @@ class UnsupervisedTest(TestCase):
         self.assertEqual(inertias, sorted(inertias, reverse=True))
 
     def test_choose_k_picks_the_best_silhouette(self):
-        sweep = unsupervised.sweep_k(
-            self.profile[datasets.ROUTE_PROFILE_FEATURES]
-        )
-        best = max(sweep, key=lambda row: row["silhouette"])
-        self.assertEqual(unsupervised.choose_k(sweep), best["k"])
+        sweep = [
+            {"k": 2, "inertia": 100.0, "silhouette": 0.50, "davies_bouldin": 0.6},
+            {"k": 3, "inertia": 50.0, "silhouette": 0.70, "davies_bouldin": 0.5},
+            {"k": 4, "inertia": 20.0, "silhouette": 0.65, "davies_bouldin": 0.4},
+        ]
+        self.assertEqual(unsupervised.choose_k(sweep), 3)
+
+    def test_choose_k_breaks_a_silhouette_tie_toward_the_smaller_k(self):
+        """A tie in silhouette must not be resolved arbitrarily by dict/list
+        order — the real sweep ties this closely (0.73812 vs 0.73800) and
+        docs/U4 justifies k=3 on the assumption that ties favour the
+        smaller k."""
+        sweep = [
+            {"k": 2, "inertia": 100.0, "silhouette": 0.50, "davies_bouldin": 0.6},
+            {"k": 3, "inertia": 50.0, "silhouette": 0.73812, "davies_bouldin": 0.5},
+            {"k": 4, "inertia": 20.0, "silhouette": 0.73812, "davies_bouldin": 0.4},
+        ]
+        self.assertEqual(unsupervised.choose_k(sweep), 3)
 
     def test_clustering_meets_the_silhouette_threshold(self):
         """Spec success criterion 5: silhouette >= 0.40."""

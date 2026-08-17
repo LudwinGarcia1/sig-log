@@ -46,6 +46,12 @@ class VehicleBehaviourTest(TestCase):
             VehicleFactory.build(year=date.today().year - 12).age_range, "9+"
         )
 
+    def test_age_range_boundaries(self):
+        self.assertEqual(VehicleFactory.build(year=date.today().year - 3).age_range, "0-3")
+        self.assertEqual(VehicleFactory.build(year=date.today().year - 4).age_range, "4-8")
+        self.assertEqual(VehicleFactory.build(year=date.today().year - 8).age_range, "4-8")
+        self.assertEqual(VehicleFactory.build(year=date.today().year - 9).age_range, "9+")
+
     def test_km_to_next_service_is_difference(self):
         vehicle = VehicleFactory.build(
             current_odometer_km=Decimal("100000.00"),

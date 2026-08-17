@@ -32,6 +32,29 @@
         <tr>
           {% for column in crud_columns %}<td>{% column_value row column %}</td>{% endfor %}
           <td class="text-end text-nowrap">
+            {% for action in crud_extra_actions %}
+              {% if action.show_if %}
+                {% if row|attr:action.show_if %}
+                  {% if action.method == "post" %}
+                  <form method="post" action="{% url action.url_name row.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="{{ action.css }}">{{ action.label }}</button>
+                  </form>
+                  {% else %}
+                  <a class="{{ action.css }}" href="{% url action.url_name row.pk %}">{{ action.label }}</a>
+                  {% endif %}
+                {% endif %}
+              {% else %}
+                {% if action.method == "post" %}
+                <form method="post" action="{% url action.url_name row.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="{{ action.css }}">{{ action.label }}</button>
+                </form>
+                {% else %}
+                <a class="{{ action.css }}" href="{% url action.url_name row.pk %}">{{ action.label }}</a>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
             <a class="btn btn-sm btn-outline-primary" href="{% url crud_slug|add:'_update' row.pk %}">Editar</a>
             <a class="btn btn-sm btn-outline-danger" href="{% url crud_slug|add:'_delete' row.pk %}">Baja</a>
           </td>

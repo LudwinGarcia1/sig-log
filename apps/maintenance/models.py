@@ -60,6 +60,10 @@ class Maintenance(BaseModel):
     def __str__(self):
         return self.folio
 
+    @property
+    def is_open(self):
+        return self.status != "COMPLETED"
+
     def save(self, *args, **kwargs):
         self.total_cost = self.labor_cost + self.parts_cost
         super().save(*args, **kwargs)

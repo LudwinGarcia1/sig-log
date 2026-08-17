@@ -5,7 +5,7 @@ from django.utils import timezone
 from apps.customers.models import Customer
 from warehouse.etl.context import EtlRun
 from warehouse.etl.extract import run as run_extract
-from warehouse.models import EtlLog, StgCustomer, StgDelivery, StgRoute
+from warehouse.models import EtlLog, StgCustomer, StgRoute
 
 
 class ExtractTest(TestCase):

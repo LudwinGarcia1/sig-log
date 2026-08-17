@@ -30,10 +30,33 @@ class FeatureContractTest(TestCase):
         self.assertIn("route_code", datasets.FEATURE_COLUMNS)
         self.assertIn("zone", datasets.FEATURE_COLUMNS)
 
-    def test_feature_columns_is_numeric_plus_categorical(self):
+    def test_feature_columns_matches_the_expected_fifteen_columns(self):
+        """Pins the exact feature set so a silent change to it fails loudly.
+
+        FEATURE_COLUMNS is defined as NUMERIC_FEATURES + CATEGORICAL_FEATURES,
+        so asserting it equals that same concatenation is a tautology that can
+        never fail. Asserting the literal list instead catches an accidental
+        addition/removal/reorder of a feature.
+        """
         self.assertEqual(
-            set(datasets.FEATURE_COLUMNS),
-            set(datasets.NUMERIC_FEATURES) | set(datasets.CATEGORICAL_FEATURES),
+            datasets.FEATURE_COLUMNS,
+            [
+                "distance_km",
+                "planned_duration_min",
+                "cargo_weight_kg",
+                "packages_count",
+                "day_of_week",
+                "route_code",
+                "route_type",
+                "zone",
+                "distance_range",
+                "time_band",
+                "vehicle_type",
+                "vehicle_age_range",
+                "operator_seniority_range",
+                "customer_type",
+                "is_weekend",
+            ],
         )
 
 

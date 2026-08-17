@@ -7,7 +7,6 @@ either the warehouse is empty (run_etl) or the ML artifacts are untrained
 (train_models) — instead of raising.
 """
 
-import joblib
 from django.shortcuts import render
 
 from apps.analytics import exports, queries
@@ -173,7 +172,8 @@ def predictions(request):
 
 def clusters(request):
     """Unidad IV in the UI: the PCA plane and the profile of every group."""
-    if not unsupervised.CLUSTER_PATH.exists():
+    prepared = unsupervised.load_clusters()
+    if prepared is None:
         return render(request, "analytics/clusters.html", {
             "section": "clusters",
             "warehouse_empty": False,
@@ -183,25 +183,15 @@ def clusters(request):
             ),
         })
 
-    artifact = joblib.load(unsupervised.CLUSTER_PATH)
     metrics = evaluation.load_metrics().get("clustering", {})
-    components = artifact["components"]
-    summary = artifact["profile_summary"].reset_index()
-
-    scatter = {}
-    for label, group in components.groupby("label"):
-        scatter[label] = [
-            {"x": round(float(x), 3), "y": round(float(y), 3), "route": index}
-            for index, x, y in zip(group.index, group["pc1"], group["pc2"])
-        ]
 
     return render(request, "analytics/clusters.html", {
         "section": "clusters",
         "warehouse_empty": False,
         "error": None,
         "metrics": metrics,
-        "summary": summary.to_dict("records"),
-        "scatter_json": scatter,
+        "summary": prepared["summary"],
+        "scatter_json": prepared["scatter"],
         "explained": [
             round(value * 100, 1) for value in metrics.get("explained_variance", [])
         ],

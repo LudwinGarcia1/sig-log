@@ -22,6 +22,7 @@ class CrudConfig:
     slug = ""
     ordering = ("-created_at",)
     paginate_by = 20
+    extra_actions = []
 
     @classmethod
     def as_context(cls):
@@ -35,6 +36,7 @@ class CrudConfig:
                 for name in cls.list_columns
             ],
             "crud_searchable": bool(cls.search_fields),
+            "crud_extra_actions": cls.extra_actions,
         }
 
     @classmethod

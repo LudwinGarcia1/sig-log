@@ -17,12 +17,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 FIGURE_DIR = BASE_DIR / "static" / "ml"
 METRICS_PATH = Path(__file__).resolve().parent / "artifacts" / "metrics.json"
 
-FIGURE_DIR.mkdir(parents=True, exist_ok=True)
 PALETTE = ["#0d6efd", "#dc3545", "#198754", "#fd7e14", "#6f42c1",
            "#20c997", "#d63384", "#6c757d", "#ffc107", "#0dcaf0"]
 
 
 def _save(figure, path):
+    FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     figure.tight_layout()
     figure.savefig(path, dpi=120)
     plt.close(figure)

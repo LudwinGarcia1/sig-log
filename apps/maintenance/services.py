@@ -2,7 +2,7 @@
 
 from django.db import transaction
 
-from apps.maintenance.models import SERVICE_INTERVAL_KM, Maintenance
+from apps.maintenance.models import SERVICE_INTERVAL_KM
 
 
 class MaintenanceError(Exception):
@@ -43,7 +43,8 @@ def complete_maintenance(maintenance, next_service_km=None):
     vehicle.current_odometer_km = maintenance.odometer_km
     vehicle.next_service_km = target
     vehicle.last_service_date = maintenance.service_date
-    vehicle.status = "AVAILABLE"
+    if vehicle.status != "OUT_OF_SERVICE":
+        vehicle.status = "AVAILABLE"
     vehicle.save(
         update_fields=[
             "current_odometer_km",

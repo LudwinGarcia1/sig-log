@@ -108,8 +108,8 @@ class Delivery(BaseModel):
         return self.delay_minutes > DELAY_TOLERANCE_MINUTES
 
     @property
-    def on_time(self):
-        return self.actual_arrival is not None and not self.is_delayed
+    def is_open(self):
+        return self.status not in Delivery.CLOSED_STATUSES
 
     @property
     def transit_minutes(self):

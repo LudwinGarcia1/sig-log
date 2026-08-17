@@ -8,6 +8,7 @@ is a number, not extracted knowledge.
 
 from pathlib import Path
 
+import joblib
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
@@ -142,4 +143,31 @@ def cluster_routes(profile, k=None, random_state=42):
         "silhouette": float(silhouette_score(projected, labels)),
         "davies_bouldin": float(davies_bouldin_score(projected, labels)),
         "components": components,
+    }
+
+
+def load_clusters():
+    """Load the saved clustering artifact and prepare it for the clusters view.
+
+    Keeps the joblib load and the pandas reshaping out of the view layer,
+    which should only orchestrate HTTP concerns (see CrudConfig's layering
+    rule in apps/core).
+    """
+    if not CLUSTER_PATH.exists():
+        return None
+
+    artifact = joblib.load(CLUSTER_PATH)
+    components = artifact["components"]
+    summary = artifact["profile_summary"].reset_index()
+
+    scatter = {}
+    for label, group in components.groupby("label"):
+        scatter[label] = [
+            {"x": round(float(x), 3), "y": round(float(y), 3), "route": index}
+            for index, x, y in zip(group.index, group["pc1"], group["pc2"])
+        ]
+
+    return {
+        "summary": summary.to_dict("records"),
+        "scatter": scatter,
     }

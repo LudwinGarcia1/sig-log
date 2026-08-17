@@ -86,7 +86,7 @@
 
 {% block scripts %}
 {% if not error %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{% static 'vendor/chart.umd.min.js' %}"></script>
 {{ scatter_json|json_script:"scatter-data" }}
 <script>
   const palette = ["#0d6efd", "#dc3545", "#198754", "#fd7e14", "#6f42c1",

@@ -19,10 +19,22 @@ class MaintenanceCrud(CrudConfig):
     label_plural = "Mantenimientos"
     slug = "maintenance"
     ordering = ("-service_date",)
+    extra_actions = [
+        {
+            "url_name": "maintenance_complete",
+            "label": "Completar",
+            "css": "btn btn-sm btn-outline-success",
+            "method": "post",
+            "show_if": "is_open",
+        },
+    ]
 
 
 def maintenance_complete(request, pk):
     """HTTP wrapper around complete_maintenance."""
+    if request.method != "POST":
+        messages.error(request, "Operación no permitida.")
+        return redirect("maintenance_list")
     order = get_object_or_404(Maintenance, pk=pk, is_active=True)
     try:
         complete_maintenance(order)

@@ -20,6 +20,15 @@ class DeliveryCrud(CrudConfig):
     slug = "delivery"
     ordering = ("-scheduled_departure",)
     paginate_by = 25
+    extra_actions = [
+        {
+            "url_name": "delivery_arrival",
+            "label": "Registrar llegada",
+            "css": "btn btn-sm btn-outline-success",
+            "method": "get",
+            "show_if": "is_open",
+        },
+    ]
 
 
 def delivery_arrival(request, pk):

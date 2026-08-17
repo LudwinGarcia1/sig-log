@@ -8,6 +8,7 @@ the chosen route so the user cannot introduce an inconsistency.
 from django import forms
 
 from apps.routes.models import Route
+from warehouse.etl.cleaning import distance_range
 from warehouse.models import TIME_BANDS
 
 DAY_CHOICES = [
@@ -25,14 +26,6 @@ SENIORITY_CHOICES = [
 CUSTOMER_TYPE_CHOICES = [
     ("PREMIUM", "Premium"), ("REGULAR", "Regular"), ("OCCASIONAL", "Ocasional"),
 ]
-
-
-def _distance_range(km):
-    if km < 80:
-        return "CORTA"
-    if km < 350:
-        return "MEDIA"
-    return "LARGA"
 
 
 class DelayPredictionForm(forms.Form):
@@ -88,7 +81,7 @@ class DelayPredictionForm(forms.Form):
             "route_code": route.code,
             "route_type": route.route_type,
             "zone": route.zone,
-            "distance_range": _distance_range(float(route.distance_km)),
+            "distance_range": distance_range(route.distance_km),
             "time_band": TIME_BANDS[hour],
             "vehicle_type": data["vehicle_type"],
             "vehicle_age_range": data["vehicle_age_range"],

@@ -62,6 +62,12 @@ class BucketTest(SimpleTestCase):
         self.assertEqual(cleaning.age_range(2020, 2026), "4-8")
         self.assertEqual(cleaning.age_range(2010, 2026), "9+")
 
+    def test_age_range_boundaries(self):
+        self.assertEqual(cleaning.age_range(2023, 2026), "0-3")
+        self.assertEqual(cleaning.age_range(2022, 2026), "4-8")
+        self.assertEqual(cleaning.age_range(2018, 2026), "4-8")
+        self.assertEqual(cleaning.age_range(2017, 2026), "9+")
+
     def test_distance_range_buckets(self):
         self.assertEqual(cleaning.distance_range(Decimal("30")), "CORTA")
         self.assertEqual(cleaning.distance_range(Decimal("200")), "MEDIA")

@@ -1,5 +1,6 @@
 {% extends "analytics/base_analytics.html" %}
 {% load humanize %}
+{% load static %}
 {% block title %}Panel general{% endblock %}
 
 {% block analytics %}
@@ -34,7 +35,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{% static 'vendor/chart.umd.min.js' %}"></script>
 {{ trend_json|json_script:"trend-data" }}
 {{ cost_json|json_script:"cost-data" }}
 <script>

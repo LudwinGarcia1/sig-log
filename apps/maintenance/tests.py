@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.test import TestCase
+from django.urls import reverse
 
 from apps.maintenance.models import Maintenance
 from apps.maintenance.services import MaintenanceError, complete_maintenance
@@ -86,3 +87,39 @@ class CompleteMaintenanceTest(MaintenanceTestCase):
         self.assertTrue(maintenance_alerts())
         complete_maintenance(self._order())
         self.assertEqual(maintenance_alerts(), [])
+
+    def test_out_of_service_vehicle_is_not_silently_returned_to_service(self):
+        self.vehicle.status = "OUT_OF_SERVICE"
+        self.vehicle.save(update_fields=["status", "updated_at"])
+        complete_maintenance(self._order())
+        self.vehicle.refresh_from_db()
+        self.assertEqual(self.vehicle.status, "OUT_OF_SERVICE")
+
+
+class MaintenanceListCompleteButtonTest(MaintenanceTestCase):
+    def test_open_order_shows_a_post_form_to_complete(self):
+        order = self._order(status="IN_PROGRESS")
+        response = self.client.get(reverse("maintenance_list"))
+        self.assertContains(response, reverse("maintenance_complete", args=[order.pk]))
+        self.assertContains(response, 'method="post"')
+
+    def test_completed_order_does_not_show_the_complete_button(self):
+        order = self._order(status="COMPLETED")
+        response = self.client.get(reverse("maintenance_list"))
+        self.assertNotContains(response, reverse("maintenance_complete", args=[order.pk]))
+
+
+class MaintenanceCompleteViewTest(MaintenanceTestCase):
+    def test_get_does_not_complete_the_order(self):
+        order = self._order(status="IN_PROGRESS")
+        response = self.client.get(reverse("maintenance_complete", args=[order.pk]))
+        self.assertRedirects(response, reverse("maintenance_list"))
+        order.refresh_from_db()
+        self.assertEqual(order.status, "IN_PROGRESS")
+
+    def test_post_completes_the_order(self):
+        order = self._order(status="IN_PROGRESS")
+        response = self.client.post(reverse("maintenance_complete", args=[order.pk]))
+        self.assertRedirects(response, reverse("maintenance_list"))
+        order.refresh_from_db()
+        self.assertEqual(order.status, "COMPLETED")

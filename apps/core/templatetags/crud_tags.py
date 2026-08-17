@@ -19,6 +19,17 @@ def nav_url(url_name):
         return ""
 
 
+@register.filter
+def attr(obj, name):
+    """Look up an arbitrary attribute/property on an object for template use.
+
+    Backs the ``show_if`` hook on ``CrudConfig.extra_actions``: the attribute
+    name is data, not known ahead of time, so plain dot-lookup in the
+    template won't do.
+    """
+    return getattr(obj, name, False)
+
+
 @register.simple_tag
 def column_value(instance, field_name):
     """Resolve a column for the generic list template.
