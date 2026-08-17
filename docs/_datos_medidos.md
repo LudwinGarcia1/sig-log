@@ -162,3 +162,40 @@ Rutas urbanas congestionadas     24 rutas | dist   28.0 km | dur  94.8 min | tas
 Rutas foráneas eficientes        14 rutas | dist  680.2 km | dur 524.2 min | tasa retraso 0.096 | retraso medio  21.2 min | envios/mes   5.9 | costo/km  18.87
 Rutas regionales estables        22 rutas | dist  171.2 km | dur 172.2 min | tasa retraso 0.114 | retraso medio  11.3 min | envios/mes  20.2 | costo/km  20.61
 ```
+
+## Costos por vehiculo — matiz importante para la interpretacion
+
+Pregunta del caso de estudio: "Que vehiculos generan mayores costos?"
+
+La respuesta tiene dos capas y conviene no confundirlas:
+
+```
+TOP 10 MAS COSTOSOS (18 meses) — los diez son TRAILER
+  #1 EC-0003  9+   combustible 614,121  mantenimiento 208,886  total 823,007
+  #2 EC-0027  9+   combustible 616,058  mantenimiento 205,425  total 821,483
+  #3 EC-0035  4-8  combustible 647,044  mantenimiento 122,522  total 769,566
+  ...
+  4 de los 10 son vehiculos de 9+ anos
+```
+
+1. El **tipo de vehiculo** domina el costo total. Los trailers rinden 2.2 km/L
+   contra 8.1 de una pick-up, y el combustible pesa entre 3 y 8 veces mas que
+   el mantenimiento. Por eso el top 10 son diez trailers.
+
+2. La **antiguedad** domina el costo de mantenimiento, y se ve al comparar la
+   flota completa:
+
+```
+COSTO TOTAL MEDIO POR RANGO DE ANTIGUEDAD
+  0-3    13 vehiculos    356,658
+  4-8    21 vehiculos    432,814
+  9+     16 vehiculos    497,556     <- crecimiento monotono
+```
+
+   Dentro del mismo tipo de vehiculo, un trailer de 9+ anos gasta 149,000 a
+   209,000 en mantenimiento contra 69,000 a 123,000 de uno joven.
+
+Conclusion accionable: para reducir el gasto de combustible hay que revisar la
+asignacion de trailers a rutas; para reducir el gasto de mantenimiento hay que
+revisar el plan de renovacion de la flota. Son dos decisiones distintas y el
+dato las separa.
