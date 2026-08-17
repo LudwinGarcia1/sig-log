@@ -159,7 +159,7 @@ SIG_LOG/
 python manage.py test
 ```
 
-La suite corre 189 pruebas: reglas de negocio de cada módulo, las ocho técnicas
+La suite corre 201 pruebas: reglas de negocio de cada módulo, las ocho técnicas
 de limpieza del ETL con caso válido e inválido, el proceso ETL de extremo a
 extremo, la ausencia de fuga de datos en las matrices de minería y el
 entrenamiento completo de los cuatro modelos. Recuerda re-entrenar los modelos

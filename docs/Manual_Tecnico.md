@@ -333,7 +333,7 @@ de los dos directorios está pensado para editarse a mano.
 python manage.py test
 ```
 
-189 pruebas repartidas así:
+201 pruebas repartidas así:
 
 | Paquete | Enfoque |
 |---|---|

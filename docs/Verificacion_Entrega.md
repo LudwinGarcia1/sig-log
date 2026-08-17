@@ -115,12 +115,12 @@ El detalle de qué pantalla responde cada una de las diez preguntas está en
 ## 3. Suite de pruebas
 
 ```
-Ran 189 tests in 263.315s
+Ran 201 tests in 270.178s
 
 OK
 ```
 
-**189 pruebas, todas en verde**, sobre los ocho módulos, el generador, el data
+**201 pruebas, todas en verde**, sobre los ocho módulos, el generador, el data
 warehouse y los modelos de minería.
 
 ---
@@ -158,7 +158,7 @@ remedio manual descrito arriba deja de ser necesario.
 | Módulos obligatorios | 8 de 8 |
 | Unidades temáticas cubiertas | 5 de 5 |
 | Criterios de éxito del diseño | 6 de 6 |
-| Pruebas automatizadas | 189, todas en verde |
+| Pruebas automatizadas | 201, todas en verde |
 | Arranque desde base vacía | 79.7 s, sin pasos manuales |
 
 Verificado sobre la rama `feature/sig-log-implementation`.
