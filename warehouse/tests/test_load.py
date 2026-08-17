@@ -71,6 +71,42 @@ class LoadTest(TestCase):
         self.assertTrue(all(log.status == "SUCCESS" for log in logs))
 
 
+class LoadFailureTest(TestCase):
+    """A LOAD phase that raises mid-way must roll back its data but still
+    leave a single trace of the failure — see warehouse/etl/load.py."""
+
+    @classmethod
+    def setUpTestData(cls):
+        call_command("loaddata", "delay_causes", verbosity=0)
+        call_command("seed_demo", months=2, seed=42, verbosity=0)
+
+    def test_failed_load_rolls_back_but_leaves_one_failed_log(self):
+        etl_run = EtlRun(full=True, rebuild=True)
+        run_extract(etl_run)
+        transformed = run_transform(etl_run)
+        # Corrupt one delivery so surrogate-key resolution blows up with a
+        # KeyError deep inside the atomic block: the dimension tables are
+        # built from the (uncorrupted) rest of the batch, so this code never
+        # gets a customer_key.
+        transformed["deliveries"][0]["customer_code"] = "NO-SUCH-CUSTOMER"
+        before = dw.FactDelivery.objects.count()
+
+        with self.assertRaises(KeyError):
+            run_load(etl_run, transformed)
+
+        # The transaction rolled back: no partial fact rows survived.
+        self.assertEqual(dw.FactDelivery.objects.count(), before)
+
+        logs = dw.EtlLog.objects.filter(run_id=etl_run.run_id, phase="LOAD")
+        self.assertEqual(logs.count(), 1)
+        failure_log = logs.first()
+        self.assertEqual(failure_log.status, "FAILED")
+        self.assertTrue(failure_log.message)
+
+        # The per-table SUCCESS rows rolled back with the data they describe.
+        self.assertEqual(logs.filter(status="SUCCESS").count(), 0)
+
+
 class RunEtlCommandTest(TestCase):
     @classmethod
     def setUpTestData(cls):

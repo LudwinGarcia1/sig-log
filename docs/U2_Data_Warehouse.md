@@ -209,6 +209,8 @@ Volumen final del almacén: `dim_date` 546, `dim_time` 24, `dim_customer`
 8, `fact_delivery` 26,886, `fact_fuel` 3,624, `fact_maintenance` 566.
 
 Cómo leer y auditar estas bitácoras (incluidas las consultas SQL) está en
-`docs/Manual_Tecnico.md`, sección 6.3, junto con el trade-off deliberado
-entre consistencia del almacén y completitud de la bitácora cuando la fase
-Load falla a la mitad.
+`docs/Manual_Tecnico.md`, sección 6.3, junto con el comportamiento cuando la
+fase Load falla a la mitad: las filas `SUCCESS` por tabla revierten con los
+datos (describirían trabajo deshecho), pero sobrevive una única fila
+`dw.etl_log` con `phase="LOAD"`, `status="FAILED"` y el detalle de la
+excepción, escrita fuera de la transacción una vez que ya revirtió.

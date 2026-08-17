@@ -250,17 +250,22 @@ segunda, qué regla está rechazando más filas. `dw.etl_error.raw_payload`
 guarda el registro original completo, así que un rechazo siempre se puede
 auditar sin volver al OLTP.
 
-**Sobre el comportamiento de `run_id` ante un fallo:** `load.run` está
-envuelto en `@transaction.atomic`, así que si la fase Load falla a la mitad,
-la base de datos revierte todo lo que esa fase intentaba escribir — y con
-ello revierte también las filas de `dw.etl_log` que esa fase había creado
-(están dentro de la misma transacción). Extract y Transform escriben su
-bitácora **fuera** de esa transacción, así que sus filas `SUCCESS` sí
-persisten. El resultado: una corrida que falló en Load se reconoce porque
-existen filas `EXTRACT`/`TRANSFORM` en `SUCCESS` para ese `run_id` pero
-ninguna fila `LOAD` — la ausencia misma es el diagnóstico. Es una decisión
-consciente: se prefirió que el almacén nunca quede a medias a que la
-bitácora sea perfectamente completa en todos los escenarios de fallo.
+**Sobre el comportamiento de `run_id` ante un fallo:** el cuerpo de
+`load.run` (`_load_all`) se ejecuta dentro de un único
+`with transaction.atomic():`, así que si la fase Load falla a la mitad, la
+base de datos revierte todo lo que esa fase intentaba escribir — y con ello
+revierte también las filas `SUCCESS` por tabla que `EtlRun.phase()` había
+creado dentro de esa transacción. Eso es intencional: esas filas describirían
+trabajo que ya no existe, así que mantenerlas haría mentir a la bitácora.
+Pero `load.run` envuelve ese bloque en un `try/except`: cuando la transacción
+ya revirtió, escribe **fuera** de ella una única fila `dw.etl_log` con
+`phase="LOAD"`, `table_name="(fase completa)"`, `status="FAILED"` y el
+`message` con el tipo y texto de la excepción, y vuelve a lanzar la
+excepción. El resultado: una corrida que falló en Load se reconoce porque
+existen filas `EXTRACT`/`TRANSFORM` en `SUCCESS` para ese `run_id` y
+exactamente una fila `LOAD` en `FAILED` que explica por qué — nunca ausencia
+total de evidencia. El almacén nunca queda a medias (la transacción sigue
+protegiendo eso) y además la bitácora nunca queda muda ante un fallo de Load.
 
 ### 6.4 Interfaz de línea de comandos
 

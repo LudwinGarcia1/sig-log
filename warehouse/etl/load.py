@@ -8,6 +8,7 @@ does not justify; the choice is deliberate and documented.
 from datetime import date, timedelta
 
 from django.db import transaction
+from django.utils import timezone
 
 from warehouse import models as dw
 from warehouse.etl.calendar import build_date_dimension, build_time_dimension
@@ -86,9 +87,35 @@ def _calendar_bounds(transformed):
     return to_date(min(keys)), to_date(max(keys))
 
 
-@transaction.atomic
 def run(etl_run, transformed):
-    """Load the whole warehouse. One transaction: never a half-built DW."""
+    """Load the whole warehouse.
+
+    The heavy lifting happens inside a single transaction (``_load_all``):
+    never a half-built DW. If it fails, the transaction rolls back — including
+    every per-table SUCCESS row that ``EtlRun.phase()`` wrote along the way,
+    since those rows would otherwise describe work that no longer exists. What
+    survives is a single FAILED row recorded here, after the rollback, so the
+    operator is never left with no trace of the run at all.
+    """
+    started = timezone.now()
+    try:
+        with transaction.atomic():
+            return _load_all(etl_run, transformed)
+    except Exception as error:
+        dw.EtlLog.objects.create(
+            run_id=etl_run.run_id,
+            phase="LOAD",
+            table_name="(fase completa)",
+            started_at=started,
+            finished_at=timezone.now(),
+            status="FAILED",
+            message=f"{type(error).__name__}: {error}",
+        )
+        raise
+
+
+def _load_all(etl_run, transformed):
+    """Body of the LOAD phase, run inside the caller's transaction."""
     counts = {}
 
     if etl_run.rebuild:
