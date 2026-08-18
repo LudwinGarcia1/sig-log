@@ -1,0 +1,114 @@
+{% extends "analytics/base_analytics.html" %}
+{% load static %}
+{% block title %}Predicción de retraso{% endblock %}
+
+{% block analytics %}
+{% if error %}<div class="alert alert-warning"><code>{{ error }}</code></div>{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">¿Llegará tarde esta entrega?</div>
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="row g-3">
+            {% for field in form %}
+            <div class="col-md-6">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            </div>
+            {% endfor %}
+          </div>
+          <button class="btn btn-primary mt-3" type="submit">Calcular predicción</button>
+        </form>
+
+        {% if prediction %}
+        <hr>
+        <div class="alert {% if prediction.will_be_late %}alert-danger{% else %}alert-success{% endif %} mb-2">
+          <div class="fs-5 fw-semibold">
+            {% if prediction.will_be_late %}Probable retraso{% else %}Llegada a tiempo{% endif %}
+          </div>
+          Probabilidad de retraso: <strong>{{ prediction.probability|floatformat:3 }}</strong>
+        </div>
+        <p class="mb-0">
+          Retraso esperado:
+          <strong>{{ prediction.expected_delay_minutes|floatformat:1 }} minutos</strong>
+          <span class="text-muted small">(regresión lineal)</span>
+        </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Evaluación del modelo</div>
+      <div class="card-body">
+        {% if metrics %}
+        <p class="mb-2">
+          Algoritmo seleccionado: <strong>{{ metrics.best_name }}</strong>
+          <span class="text-muted small">
+            — entrenamiento {{ metrics.train_size }} filas, prueba {{ metrics.test_size }} filas
+          </span>
+        </p>
+        <div class="table-responsive mb-3">
+          <table class="table table-sm">
+            <thead class="table-light"><tr>
+              <th>Algoritmo</th><th class="text-end">Exactitud</th>
+              <th class="text-end">Precisión</th><th class="text-end">Sensibilidad</th>
+              <th class="text-end">F1</th><th class="text-end">ROC-AUC</th>
+              <th class="text-end">F1 (VC 5)</th>
+            </tr></thead>
+            <tbody>
+              {% for candidate in metrics.candidates %}
+              <tr {% if candidate.name == metrics.best_name %}class="table-success"{% endif %}>
+                <td>{{ candidate.name }}</td>
+                <td class="text-end">{{ candidate.metrics.accuracy|floatformat:3 }}</td>
+                <td class="text-end">{{ candidate.metrics.precision|floatformat:3 }}</td>
+                <td class="text-end">{{ candidate.metrics.recall|floatformat:3 }}</td>
+                <td class="text-end fw-semibold">{{ candidate.metrics.f1|floatformat:3 }}</td>
+                <td class="text-end">{{ candidate.metrics.roc_auc|floatformat:3 }}</td>
+                <td class="text-end">{{ candidate.cv_f1_mean|floatformat:3 }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if regression %}
+        <p class="mb-2">
+          Regresión lineal —
+          MSE <strong>{{ regression.metrics.mse|floatformat:2 }}</strong> ·
+          RMSE {{ regression.metrics.rmse|floatformat:2 }} ·
+          MAE <strong>{{ regression.metrics.mae|floatformat:2 }}</strong> ·
+          R² {{ regression.metrics.r2|floatformat:3 }}
+        </p>
+        {% endif %}
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <img src="{% static 'ml/confusion_matrix.png' %}" class="img-fluid"
+                 alt="Matriz de confusión">
+          </div>
+          <div class="col-md-6">
+            <img src="{% static 'ml/residuals.png' %}" class="img-fluid"
+                 alt="Residuales de la regresión">
+          </div>
+        </div>
+
+        <h6 class="mt-4">Variables más influyentes</h6>
+        <ol class="small mb-0">
+          {% for name, weight in metrics.feature_importances|slice:":10" %}
+          <li>{{ name }} <span class="text-muted">({{ weight|floatformat:4 }})</span></li>
+          {% endfor %}
+        </ol>
+        {% else %}
+        <p class="text-muted mb-0">Sin métricas disponibles.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

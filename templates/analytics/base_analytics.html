@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<ul class="nav nav-pills mb-4">
+  <li class="nav-item"><a class="nav-link {% if section == 'dashboard' %}active{% endif %}" href="{% url 'analytics_dashboard' %}">Panel general</a></li>
+  <li class="nav-item"><a class="nav-link {% if section == 'operations' %}active{% endif %}" href="{% url 'analytics_operations' %}">Operación</a></li>
+  <li class="nav-item"><a class="nav-link {% if section == 'costs' %}active{% endif %}" href="{% url 'analytics_costs' %}">Costos</a></li>
+  <li class="nav-item"><a class="nav-link {% if section == 'alerts' %}active{% endif %}" href="{% url 'analytics_alerts' %}">Mantenimiento</a></li>
+  <li class="nav-item"><a class="nav-link {% if section == 'predictions' %}active{% endif %}" href="{% url 'analytics_predictions' %}">Predicción</a></li>
+  <li class="nav-item"><a class="nav-link {% if section == 'clusters' %}active{% endif %}" href="{% url 'analytics_clusters' %}">Conglomerados</a></li>
+</ul>
+
+{% if warehouse_empty %}
+<div class="alert alert-warning">
+  <strong>El data warehouse está vacío.</strong>
+  Ejecuta <code>python manage.py seed_demo</code> y después
+  <code>python manage.py run_etl --rebuild</code> para poblarlo.
+</div>
+{% else %}
+{% block analytics %}{% endblock %}
+{% endif %}
+{% endblock %}

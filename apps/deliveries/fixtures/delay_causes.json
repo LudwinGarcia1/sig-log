@@ -1,0 +1,10 @@
+[
+  {"model": "deliveries.delaycause", "pk": 1, "fields": {"code": "TRAFICO", "name": "Tráfico", "category": "EXTERNA", "is_active": true, "created_at": "2026-08-16T00:00:00Z", "updated_at": "2026-08-16T00:00:00Z"}},
+  {"model": "deliveries.delaycause", "pk": 2, "fields": {"code": "CLIMA", "name": "Clima", "category": "EXTERNA", "is_active": true, "created_at": "2026-08-16T00:00:00Z", "updated_at": "2026-08-16T00:00:00Z"}},
+  {"model": "deliveries.delaycause", "pk": 3, "fields": {"code": "FALLA_MECANICA", "name": "Falla mecánica", "category": "MECANICA", "is_active": true, "created_at": "2026-08-16T00:00:00Z", "updated_at": "2026-08-16T00:00:00Z"}},
+  {"model": "deliveries.delaycause", "pk": 4, "fields": {"code": "DOCUMENTACION", "name": "Documentación", "category": "INTERNA", "is_active": true, "created_at": "2026-08-16T00:00:00Z", "updated_at": "2026-08-16T00:00:00Z"}},
+  {"model": "deliveries.delaycause", "pk": 5, "fields": {"code": "CARGA_DESCARGA", "name": "Carga y descarga", "category": "INTERNA", "is_active": true, "created_at": "2026-08-16T00:00:00Z", "updated_at": "2026-08-16T00:00:00Z"}},
+  {"model": "deliveries.delaycause", "pk": 6, "fields": {"code": "ACCIDENTE", "name": "Accidente", "category": "EXTERNA", "is_active": true, "created_at": "2026-08-16T00:00:00Z", "updated_at": "2026-08-16T00:00:00Z"}},
+  {"model": "deliveries.delaycause", "pk": 7, "fields": {"code": "OTRO", "name": "Otro", "category": "EXTERNA", "is_active": true, "created_at": "2026-08-16T00:00:00Z", "updated_at": "2026-08-16T00:00:00Z"}},
+  {"model": "deliveries.delaycause", "pk": 8, "fields": {"code": "NO_ESPECIFICADA", "name": "No especificada", "category": "EXTERNA", "is_active": true, "created_at": "2026-08-16T00:00:00Z", "updated_at": "2026-08-16T00:00:00Z"}}
+]

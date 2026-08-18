@@ -1,0 +1,122 @@
+{% extends "analytics/base_analytics.html" %}
+{% load static %}
+{% block title %}Conglomerados de rutas{% endblock %}
+
+{% block analytics %}
+{% if error %}
+<div class="alert alert-warning"><code>{{ error }}</code></div>
+{% else %}
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card shadow-sm"><div class="card-body">
+      <div class="kpi-label text-muted">Conglomerados</div>
+      <div class="kpi-value">{{ metrics.k }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card shadow-sm"><div class="card-body">
+      <div class="kpi-label text-muted">Coeficiente de silueta</div>
+      <div class="kpi-value">{{ metrics.silhouette|floatformat:3 }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card shadow-sm"><div class="card-body">
+      <div class="kpi-label text-muted">Davies-Bouldin</div>
+      <div class="kpi-value">{{ metrics.davies_bouldin|floatformat:3 }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card shadow-sm"><div class="card-body">
+      <div class="kpi-label text-muted">Varianza explicada</div>
+      <div class="kpi-value">
+        {% for value in explained %}{{ value }}%{% if not forloop.last %} + {% endif %}{% endfor %}
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Rutas en el plano de componentes principales</div>
+      <div class="card-body"><canvas id="pcaChart" height="260"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Diagnóstico del agrupamiento</div>
+      <div class="card-body">
+        <img src="{% static 'ml/elbow.png' %}" class="img-fluid mb-3" alt="Método del codo">
+        <img src="{% static 'ml/silhouette.png' %}" class="img-fluid" alt="Silueta por k">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mt-3">
+  <div class="card-header">Perfil de cada conglomerado</div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead class="table-light"><tr>
+        <th>Conglomerado</th><th class="text-end">Rutas</th>
+        <th class="text-end">Distancia media</th><th class="text-end">Duración media</th>
+        <th class="text-end">Tasa de retraso</th><th class="text-end">Retraso medio</th>
+        <th class="text-end">Envíos/mes</th><th class="text-end">$/km</th>
+      </tr></thead>
+      <tbody>
+        {% for row in summary %}
+        <tr>
+          <td class="fw-semibold">{{ row.label }}</td>
+          <td class="text-end">{{ row.routes }}</td>
+          <td class="text-end">{{ row.distance_km|floatformat:0 }} km</td>
+          <td class="text-end">{{ row.avg_duration_min|floatformat:0 }} min</td>
+          <td class="text-end">{{ row.delay_rate|floatformat:2 }}</td>
+          <td class="text-end">{{ row.avg_delay_minutes|floatformat:1 }} min</td>
+          <td class="text-end">{{ row.monthly_shipments|floatformat:1 }}</td>
+          <td class="text-end">${{ row.avg_cost_per_km|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if not error %}
+<script src="{% static 'vendor/chart.umd.min.js' %}"></script>
+{{ scatter_json|json_script:"scatter-data" }}
+<script>
+  const palette = ["#0d6efd", "#dc3545", "#198754", "#fd7e14", "#6f42c1",
+                   "#20c997", "#d63384", "#6c757d", "#ffc107", "#0dcaf0"];
+  const scatter = JSON.parse(document.getElementById("scatter-data").textContent);
+  new Chart(document.getElementById("pcaChart"), {
+    type: "scatter",
+    data: {
+      datasets: Object.entries(scatter).map(([label, points], index) => ({
+        label: label,
+        data: points,
+        backgroundColor: palette[index % palette.length],
+        pointRadius: 5
+      }))
+    },
+    options: {
+      plugins: {
+        legend: { position: "bottom" },
+        tooltip: {
+          callbacks: {
+            label: context => `${context.dataset.label} — ${context.raw.route}`
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: "Componente principal 1" } },
+        y: { title: { display: true, text: "Componente principal 2" } }
+      }
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}

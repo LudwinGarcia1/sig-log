@@ -434,7 +434,7 @@ Cada técnica de limpieza es una función con nombre propio y prueba asociada:
 | Validación de rango | `liters > 0`, `distance_km > 0`, `freight_cost >= 0` |
 | Coherencia temporal | `actual_arrival >= actual_departure`; fechas dentro de la ventana del proyecto |
 | Integridad referencial | La entrega apunta a cliente, ruta, vehículo y operador existentes |
-| Detección de atípicos | Rendimiento fuera de `[1.0, 8.0]` km/L → cuarentena, no eliminación |
+| Detección de atípicos | Rendimiento fuera de `[1.0, 12.0]` km/L → cuarentena, no eliminación |
 | Derivación | `delay_minutes`, `is_delayed`, `time_band`, buckets de antigüedad y distancia |
 
 Regla invariable: **nada se descarta en silencio**. Cada fila rechazada se
@@ -476,22 +476,39 @@ con `--full` es válido pero redundante.
 
 `python manage.py seed_demo --months 18 [--seed 42]`
 
-Volumen objetivo:
+Volumen real producido por la corrida de referencia (`--months 18 --seed 42`),
+medido contra la base de datos:
 
-| Entidad | Registros |
-|---|---|
-| Clientes | 120 |
-| Vehículos | 50 |
-| Operadores | 40 |
-| Rutas | 60 |
-| Entregas | ~15 000 |
-| Cargas de combustible | ~8 200 |
-| Mantenimientos | ~900 |
+| Entidad | Registros | Origen de la cifra |
+|---|---|---|
+| Clientes | 120 | fijo |
+| Vehículos | 50 | fijo |
+| Operadores | 40 | fijo |
+| Rutas | 60 | fijo (24 urbanas + 22 regionales + 14 foráneas) |
+| Entregas | 27 158 cerradas | volumen mensual por arquetipo de ruta |
+| Cargas de combustible | 3 633 | una cada 4 a 11 días por vehículo (72.7 por unidad) |
+| Mantenimientos | 565 | 11.3 por vehículo en 18 meses |
+
+Tasas de retraso medidas en esa corrida:
+
+| Grupo | Entregas | Tasa de retraso |
+|---|---|---|
+| Zonas congestionadas (METROPOLITANA, ORIENTE) | 17 586 | **0.6792** |
+| Resto de zonas | 9 572 | **0.1107** |
+| Global | 27 158 | 0.4788 |
+
+Los tres últimos renglones se derivan de las fórmulas del generador, no se fijan
+a mano: cambiar los rangos de los arquetipos o el intervalo de recarga mueve las
+cifras. Una corrida completa tarda menos de diez segundos.
 
 Patrones sembrados de forma deliberada, para que los modelos tengan señal
 aprendible en lugar de ruido:
 
-1. Un subconjunto de rutas concentra retrasos por encima de la media.
+1. Las zonas METROPOLITANA y ORIENTE concentran los retrasos. El patrón se
+   ancla a la **zona**, no a rutas individuales, porque `zone` es una variable
+   del modelo y la identidad de la ruta también: si la congestión viviera solo
+   en objetos de ruta concretos y el clasificador no viera identidad, el patrón
+   sería inaprendible.
 2. Los vehículos de más de ocho años consumen más y fallan con mayor frecuencia.
 3. Las salidas en franjas pico (07–09 h y 17–19 h) acumulan más retraso.
 4. El perfil agregado de rutas produce grupos separables en tres o cuatro

@@ -1,0 +1,160 @@
+{% extends "analytics/base_analytics.html" %}
+{% load static %}
+{% block title %}Operación{% endblock %}
+
+{% block analytics %}
+<div class="d-flex gap-2 mb-3">
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'rutas' 'csv' %}">Rutas · CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'rutas' 'xlsx' %}">Rutas · Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'rutas-retrasadas' 'xlsx' %}">Retrasos · Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'operadores' 'xlsx' %}">Operadores · Excel</a>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Rutas más utilizadas</div>
+      <div class="card-body"><canvas id="routesChart" height="200"></canvas></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr>
+            <th>Código</th><th>Ruta</th><th>Zona</th>
+            <th class="text-end">Envíos</th><th class="text-end">% retraso</th>
+          </tr></thead>
+          <tbody>
+            {% for row in top_routes %}
+            <tr>
+              <td>{{ row.code }}</td><td>{{ row.name }}</td><td>{{ row.zone }}</td>
+              <td class="text-end">{{ row.shipments }}</td>
+              <td class="text-end">{{ row.delay_rate }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Operadores con más entregas</div>
+      <div class="card-body"><canvas id="operatorsChart" height="200"></canvas></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr>
+            <th>Empleado</th><th>Nombre</th>
+            <th class="text-end">Entregas</th><th class="text-end">% retraso</th>
+          </tr></thead>
+          <tbody>
+            {% for row in operators %}
+            <tr>
+              <td>{{ row.employee_number }}</td><td>{{ row.full_name }}</td>
+              <td class="text-end">{{ row.deliveries }}</td>
+              <td class="text-end">{{ row.delay_rate }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-header">Rutas con mayores retrasos</div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead class="table-light"><tr>
+        <th>Código</th><th>Ruta</th><th>Zona</th>
+        <th class="text-end">Envíos</th>
+        <th class="text-end">Retraso promedio</th><th class="text-end">% retraso</th>
+      </tr></thead>
+      <tbody>
+        {% for row in worst_routes %}
+        <tr>
+          <td>{{ row.code }}</td><td>{{ row.name }}</td><td>{{ row.zone }}</td>
+          <td class="text-end">{{ row.shipments }}</td>
+          <td class="text-end">{{ row.avg_delay }} min</td>
+          <td class="text-end">{{ row.delay_rate }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-header">Saturación por día y hora</div>
+  <div class="card-body table-responsive">
+    <table class="table table-sm table-bordered mb-0 text-center" style="font-size:.75rem">
+      <thead><tr><th></th>
+        {% for hour in heatmap.hours %}<th>{{ hour }}</th>{% endfor %}
+      </tr></thead>
+      <tbody id="heatmapBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header">Causas de retraso (Pareto)</div>
+  <div class="card-body"><canvas id="paretoChart" height="110"></canvas></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'vendor/chart.umd.min.js' %}"></script>
+{{ routes_json|json_script:"routes-data" }}
+{{ operators_json|json_script:"operators-data" }}
+{{ heatmap_json|json_script:"heatmap-data" }}
+{{ pareto_json|json_script:"pareto-data" }}
+<script>
+  const routes = JSON.parse(document.getElementById("routes-data").textContent);
+  new Chart(document.getElementById("routesChart"), {
+    type: "bar",
+    data: { labels: routes.labels,
+            datasets: [{ label: "Envíos", data: routes.values, backgroundColor: "#0d6efd" }] },
+    options: { plugins: { legend: { display: false } } }
+  });
+
+  const operators = JSON.parse(document.getElementById("operators-data").textContent);
+  new Chart(document.getElementById("operatorsChart"), {
+    type: "bar",
+    data: { labels: operators.labels,
+            datasets: [{ label: "Entregas", data: operators.values, backgroundColor: "#198754" }] },
+    options: { plugins: { legend: { display: false } } }
+  });
+
+  // Heatmap cells are painted here so the template stays free of arithmetic.
+  const heatmap = JSON.parse(document.getElementById("heatmap-data").textContent);
+  const peak = Math.max(1, ...heatmap.matrix.flat());
+  const body = document.getElementById("heatmapBody");
+  body.innerHTML = heatmap.matrix.map((row, index) =>
+    `<tr><th class="text-start">${heatmap.days[index]}</th>` +
+    row.map(value => {
+      const alpha = value / peak;
+      const color = alpha > 0.55 ? "#fff" : "#212529";
+      return `<td style="background:rgba(13,110,253,${alpha.toFixed(2)});color:${color}">${value || ""}</td>`;
+    }).join("") + "</tr>"
+  ).join("");
+
+  const pareto = JSON.parse(document.getElementById("pareto-data").textContent);
+  new Chart(document.getElementById("paretoChart"), {
+    data: {
+      labels: pareto.labels,
+      datasets: [
+        { type: "bar", label: "Entregas con retraso", data: pareto.counts,
+          backgroundColor: "#dc3545", yAxisID: "y" },
+        { type: "line", label: "Acumulado %", data: pareto.cumulative,
+          borderColor: "#fd7e14", yAxisID: "y1", tension: 0.2 }
+      ]
+    },
+    options: {
+      scales: {
+        y: { position: "left", beginAtZero: true },
+        y1: { position: "right", min: 0, max: 100, grid: { drawOnChartArea: false } }
+      },
+      plugins: { legend: { position: "bottom" } }
+    }
+  });
+</script>
+{% endblock %}

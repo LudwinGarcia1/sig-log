@@ -1,0 +1,100 @@
+{% extends "analytics/base_analytics.html" %}
+{% load humanize %}
+{% load static %}
+{% block title %}Costos{% endblock %}
+
+{% block analytics %}
+<div class="d-flex gap-2 mb-3">
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'costos-vehiculo' 'csv' %}">Costos · CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'costos-vehiculo' 'xlsx' %}">Costos · Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'rendimiento' 'xlsx' %}">Rendimiento · Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'costo-por-km' 'xlsx' %}">Costo/km · Excel</a>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-header">Costo total por vehículo</div>
+  <div class="card-body"><canvas id="costChart" height="110"></canvas></div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead class="table-light"><tr>
+        <th>Económico</th><th>Placa</th><th>Antigüedad</th>
+        <th class="text-end">Combustible</th><th class="text-end">Mantenimiento</th>
+        <th class="text-end">Total</th>
+      </tr></thead>
+      <tbody>
+        {% for row in vehicles %}
+        <tr>
+          <td>{{ row.economic_number }}</td><td>{{ row.plate }}</td>
+          <td>{{ row.age_range }} años</td>
+          <td class="text-end">${{ row.fuel_cost|floatformat:0|intcomma }}</td>
+          <td class="text-end">${{ row.maintenance_cost|floatformat:0|intcomma }}</td>
+          <td class="text-end fw-semibold">${{ row.total_cost|floatformat:0|intcomma }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Rendimiento por vehículo (peor primero)</div>
+      <div class="card-body"><canvas id="efficiencyChart" height="220"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Costo por kilómetro por ruta</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr>
+            <th>Código</th><th>Ruta</th>
+            <th class="text-end">$/km</th><th class="text-end">Envíos</th>
+          </tr></thead>
+          <tbody>
+            {% for row in routes %}
+            <tr>
+              <td>{{ row.code }}</td><td>{{ row.name }}</td>
+              <td class="text-end">${{ row.cost_per_km }}</td>
+              <td class="text-end">{{ row.shipments }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'vendor/chart.umd.min.js' %}"></script>
+{{ cost_json|json_script:"cost-data" }}
+{{ efficiency_json|json_script:"efficiency-data" }}
+<script>
+  const costs = JSON.parse(document.getElementById("cost-data").textContent);
+  new Chart(document.getElementById("costChart"), {
+    type: "bar",
+    data: {
+      labels: costs.labels,
+      datasets: [
+        { label: "Combustible", data: costs.fuel, backgroundColor: "#0d6efd" },
+        { label: "Mantenimiento", data: costs.maintenance, backgroundColor: "#fd7e14" }
+      ]
+    },
+    options: {
+      plugins: { legend: { position: "bottom" } },
+      scales: { x: { stacked: true }, y: { stacked: true } }
+    }
+  });
+
+  const efficiency = JSON.parse(document.getElementById("efficiency-data").textContent);
+  new Chart(document.getElementById("efficiencyChart"), {
+    type: "bar",
+    data: { labels: efficiency.labels,
+            datasets: [{ label: "km/L", data: efficiency.values, backgroundColor: "#198754" }] },
+    options: { indexAxis: "y", plugins: { legend: { display: false } } }
+  });
+</script>
+{% endblock %}
