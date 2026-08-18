@@ -71,7 +71,8 @@ y luego otorgarle la propiedad al rol `siglog` desde `psql`.
 
 ```powershell
 git clone <url> SIG_LOG; cd SIG_LOG
-python -m venv .venv; .\.venv\Scripts\Activate.ps1
+conda create -n siglog python=3.13 -y
+conda activate siglog
 pip install -r requirements.txt
 Copy-Item .env.example .env
 ```

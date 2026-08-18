@@ -31,10 +31,26 @@ ese almacén.
 
 ```powershell
 git clone <url> SIG_LOG; cd SIG_LOG
-python -m venv .venv; .\.venv\Scripts\Activate.ps1
+conda create -n siglog python=3.13 -y
+conda activate siglog
 pip install -r requirements.txt
 Copy-Item .env.example .env       # y edita DB_PASSWORD
 ```
+
+El entorno se llama `siglog`, igual que la base de datos y el rol de PostgreSQL.
+Si prefieres `venv` en lugar de conda, sustituye las dos primeras líneas por
+`python -m venv .venv` y `.\.venv\Scripts\Activate.ps1`; el resto es idéntico.
+
+**Cada vez que abras una terminal nueva**, activa el entorno antes de cualquier
+comando de `manage.py`:
+
+```powershell
+conda activate siglog
+```
+
+Si el prompt muestra `(base)` en lugar de `(siglog)`, los comandos fallarán con
+`ModuleNotFoundError: No module named 'django'`, porque el Python de Anaconda
+base no tiene las dependencias del proyecto.
 
 El proyecto se conecta a PostgreSQL como un rol dedicado (`siglog`), nunca como
 `postgres`. Créalo antes de migrar (usando `psql -U postgres` u otra herramienta
