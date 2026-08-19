@@ -57,6 +57,25 @@ REPORTS = {
             ("liters", "Litros"),
         ],
     },
+    "demanda-servicio": {
+        "label": "Demanda por tipo de servicio",
+        "builder": queries.demand_by_service_type,
+        "columns": [
+            ("service_type", "Servicio"), ("shipments", "Envíos"),
+            ("share", "Participación %"), ("delay_rate", "% retraso"),
+            ("freight", "Flete"), ("routes", "Rutas"),
+        ],
+    },
+    "demanda-cliente": {
+        "label": "Clientes con mayor demanda",
+        "builder": lambda: queries.top_customers(limit=200),
+        "columns": [
+            ("code", "Código"), ("business_name", "Cliente"),
+            ("city", "Ciudad"), ("customer_type", "Tipo"),
+            ("shipments", "Envíos"), ("delay_rate", "% retraso"),
+            ("freight", "Flete"),
+        ],
+    },
     "costo-por-km": {
         "label": "Costo por kilómetro por ruta",
         "builder": lambda: queries.cost_per_km_by_route(limit=200),

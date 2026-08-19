@@ -8,6 +8,62 @@
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'rutas' 'xlsx' %}">Rutas · Excel</a>
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'rutas-retrasadas' 'xlsx' %}">Retrasos · Excel</a>
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'operadores' 'xlsx' %}">Operadores · Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'demanda-servicio' 'xlsx' %}">Demanda por servicio · Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'demanda-cliente' 'xlsx' %}">Demanda por cliente · Excel</a>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-5">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Demanda por tipo de servicio</div>
+      <div class="card-body" style="height:260px"><canvas id="serviceChart"></canvas></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr>
+            <th>Servicio</th><th class="text-end">Envíos</th>
+            <th class="text-end">Participación</th><th class="text-end">% retraso</th>
+          </tr></thead>
+          <tbody>
+            {% for row in service_demand %}
+            <tr {% if forloop.first %}class="table-primary fw-semibold"{% endif %}>
+              <td>{{ row.service_type }}</td>
+              <td class="text-end">{{ row.shipments }}</td>
+              <td class="text-end">{{ row.share }}%</td>
+              <td class="text-end">{{ row.delay_rate }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer text-body-secondary small">
+        El renglón resaltado es el servicio con mayor demanda.
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Clientes con mayor demanda</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead class="table-light"><tr>
+            <th>Código</th><th>Cliente</th><th>Ciudad</th><th>Tipo</th>
+            <th class="text-end">Envíos</th><th class="text-end">Flete</th>
+          </tr></thead>
+          <tbody>
+            {% for row in top_customers %}
+            <tr>
+              <td>{{ row.code }}</td><td>{{ row.business_name }}</td>
+              <td>{{ row.city }}</td><td>{{ row.customer_type }}</td>
+              <td class="text-end">{{ row.shipments }}</td>
+              <td class="text-end">${{ row.freight|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="row g-3 mb-3">
@@ -107,7 +163,19 @@
 {{ operators_json|json_script:"operators-data" }}
 {{ heatmap_json|json_script:"heatmap-data" }}
 {{ pareto_json|json_script:"pareto-data" }}
+{{ service_demand_json|json_script:"service-data" }}
 <script>
+  const service = JSON.parse(document.getElementById("service-data").textContent);
+  new Chart(document.getElementById("serviceChart"), {
+    type: "doughnut",
+    data: { labels: service.labels,
+            datasets: [{ label: "Envíos", data: service.values,
+                         backgroundColor: ["#0d6efd", "#20c997", "#ffc107", "#6f42c1"] }] },
+    // Sin esto la dona toma proporción 1:1 y se come la pantalla: el alto lo
+    // fija el contenedor, no el canvas.
+    options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }
+  });
+
   const routes = JSON.parse(document.getElementById("routes-data").textContent);
   new Chart(document.getElementById("routesChart"), {
     type: "bar",

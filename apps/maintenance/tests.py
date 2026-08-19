@@ -1,16 +1,17 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
-from django.test import TestCase
 from django.urls import reverse
 
+from apps.core.tests.base import AuthenticatedTestCase
 from apps.maintenance.models import Maintenance
 from apps.maintenance.services import MaintenanceError, complete_maintenance
 from apps.vehicles.models import Vehicle
 
 
-class MaintenanceTestCase(TestCase):
+class MaintenanceTestCase(AuthenticatedTestCase):
     def setUp(self):
+        super().setUp()
         self.vehicle = Vehicle.objects.create(
             plate="ABC1234", economic_number="EC-0001", brand="Freightliner",
             model="Cascadia", year=date.today().year - 3, vehicle_type="TRUCK",

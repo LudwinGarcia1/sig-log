@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.shortcuts import redirect
 from django.urls import path, reverse_lazy
@@ -68,7 +69,14 @@ class CrudConfig:
         ]
 
 
-class CrudContextMixin:
+class CrudContextMixin(LoginRequiredMixin):
+    """Shared context, success URL and access control for the four CRUD views.
+
+    Inheriting ``LoginRequiredMixin`` here is what puts the seven capture
+    modules behind a session: list, create, update and delete all pass
+    through this mixin.
+    """
+
     crud = None
 
     def get_context_data(self, **kwargs):
@@ -138,5 +146,5 @@ class CrudDeleteView(CrudContextMixin, DeleteView):
         return redirect(self.get_success_url())
 
 
-class HomeView(TemplateView):
+class HomeView(LoginRequiredMixin, TemplateView):
     template_name = "core/home.html"

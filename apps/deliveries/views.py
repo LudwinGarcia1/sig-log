@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.core.views import CrudConfig
@@ -31,6 +32,7 @@ class DeliveryCrud(CrudConfig):
     ]
 
 
+@login_required
 def delivery_arrival(request, pk):
     """HTTP wrapper around register_arrival. Holds no business rule itself."""
     delivery = get_object_or_404(Delivery, pk=pk, is_active=True)

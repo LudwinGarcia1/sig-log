@@ -1,10 +1,10 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
-from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.core.tests.base import AuthenticatedTestCase
 from apps.customers.models import Customer
 from apps.deliveries.models import DelayCause, Delivery
 from apps.deliveries.services import DeliveryError, register_arrival
@@ -13,8 +13,9 @@ from apps.routes.models import Route
 from apps.vehicles.models import Vehicle
 
 
-class DeliveryTestCase(TestCase):
+class DeliveryTestCase(AuthenticatedTestCase):
     def setUp(self):
+        super().setUp()
         self.customer = Customer.objects.create(
             code="CLI-0001", business_name="Distribuidora del Valle",
             tax_id="DVA010203AB1", contact_name="Luis Mora", phone="7221234567",

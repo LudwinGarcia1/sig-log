@@ -76,6 +76,12 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = []
 
+# Rutas literales, no nombres: el urlconf reducido de las pruebas del motor
+# CRUD no declara la vista de acceso, y un nombre por resolver la rompería.
+LOGIN_URL = "/entrar/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/entrar/"
+
 LANGUAGE_CODE = "es-mx"
 TIME_ZONE = "America/Mexico_City"
 USE_I18N = True

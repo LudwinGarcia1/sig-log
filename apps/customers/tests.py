@@ -1,11 +1,12 @@
-from django.test import TestCase
 from django.urls import reverse
 
+from apps.core.tests.base import AuthenticatedTestCase
 from apps.customers.models import Customer
 
 
-class CustomerCrudTest(TestCase):
+class CustomerCrudTest(AuthenticatedTestCase):
     def setUp(self):
+        super().setUp()
         Customer.objects.create(
             code="CLI-0001",
             business_name="Distribuidora del Valle",

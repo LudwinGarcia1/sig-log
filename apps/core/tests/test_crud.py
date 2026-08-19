@@ -1,9 +1,11 @@
 from django import forms
-from django.test import TestCase, override_settings
+from django.contrib.auth import views as auth_views
+from django.test import override_settings
 from django.urls import include, path, reverse
 
 from apps.core.navigation import NAV_ITEMS, register
 from apps.core.views import CrudConfig, HomeView
+from apps.core.tests.base import AuthenticatedTestCase
 from apps.core.tests.models import Widget
 
 
@@ -24,14 +26,22 @@ class WidgetCrud(CrudConfig):
     ordering = ("code",)
 
 
+# base.html reverses "logout", so this reduced urlconf declares the auth
+# routes too — otherwise rendering any CRUD page here raises NoReverseMatch.
 urlpatterns = [
     path("", HomeView.as_view(), name="home"),
+    path(
+        "entrar/",
+        auth_views.LoginView.as_view(template_name="core/login.html"),
+        name="login",
+    ),
+    path("salir/", auth_views.LogoutView.as_view(), name="logout"),
     path("widgets/", include(WidgetCrud.urlpatterns())),
 ]
 
 
 @override_settings(ROOT_URLCONF="apps.core.tests.test_crud")
-class CrudEngineTest(TestCase):
+class CrudEngineTest(AuthenticatedTestCase):
     """Exercises the engine that every maintenance module is built on."""
 
     databases = {"default"}
@@ -53,6 +63,7 @@ class CrudEngineTest(TestCase):
         super().tearDownClass()
 
     def setUp(self):
+        super().setUp()
         Widget.objects.create(code="W-01", name="Tornillo", size="SMALL")
         Widget.objects.create(code="W-02", name="Palanca", size="LARGE")
 

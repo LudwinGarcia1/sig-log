@@ -136,6 +136,64 @@ def top_operators(limit=10):
     ]
 
 
+def demand_by_service_type():
+    """Demanda por tipo de servicio: qué corredor mueve más carga.
+
+    Los tres tipos (LOCAL, REGIONAL, FORANEA) parten el total de envíos, así
+    que la participación de cada uno suma cien por ciento.
+    """
+    rows = (
+        dw.FactDelivery.objects.values("route__route_type")
+        .annotate(
+            shipments=Count("id"),
+            delayed=Count("id", filter=Q(is_delayed=1)),
+            freight=Coalesce(Sum("freight_cost"), ZERO),
+            routes=Count("route", distinct=True),
+        )
+        .order_by("-shipments")
+    )
+    total = sum(row["shipments"] for row in rows)
+    return [
+        {
+            "service_type": row["route__route_type"],
+            "shipments": row["shipments"],
+            "share": round(row["shipments"] / total * 100, 1) if total else 0.0,
+            "delay_rate": round(row["delayed"] / row["shipments"] * 100, 1),
+            "freight": row["freight"],
+            "routes": row["routes"],
+        }
+        for row in rows
+    ]
+
+
+def top_customers(limit=10):
+    """Clientes que concentran la demanda, con el flete que aportan."""
+    rows = (
+        dw.FactDelivery.objects.values(
+            "customer__code", "customer__business_name",
+            "customer__city", "customer__customer_type",
+        )
+        .annotate(
+            shipments=Count("id"),
+            delayed=Count("id", filter=Q(is_delayed=1)),
+            freight=Coalesce(Sum("freight_cost"), ZERO),
+        )
+        .order_by("-shipments")[:limit]
+    )
+    return [
+        {
+            "code": row["customer__code"],
+            "business_name": row["customer__business_name"],
+            "city": row["customer__city"],
+            "customer_type": row["customer__customer_type"],
+            "shipments": row["shipments"],
+            "delay_rate": round(row["delayed"] / row["shipments"] * 100, 1),
+            "freight": row["freight"],
+        }
+        for row in rows
+    ]
+
+
 def hour_heatmap():
     """P10 — horarios de mayor saturación, día de la semana x hora."""
     matrix = [[0] * 24 for _ in range(7)]

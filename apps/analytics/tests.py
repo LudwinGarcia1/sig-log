@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.analytics import queries
+from apps.core.tests.base import AuthenticatedTestCase
 from ml import evaluation, supervised, unsupervised
 
 
@@ -121,8 +122,28 @@ class AnalyticsQueriesTest(TestCase):
         values = [float(row["efficiency"]) for row in rows]
         self.assertEqual(values, sorted(values))
 
+    def test_demand_by_service_type_covers_every_shipment(self):
+        """The service mix must account for all deliveries, nothing dropped."""
+        rows = queries.demand_by_service_type()
+        self.assertGreater(len(rows), 0)
+        total = queries.kpi_summary()["deliveries"]
+        self.assertEqual(sum(row["shipments"] for row in rows), total)
+        self.assertAlmostEqual(sum(row["share"] for row in rows), 100.0, places=1)
 
-class DashboardViewTest(TestCase):
+    def test_demand_by_service_type_is_ordered_by_shipments(self):
+        rows = queries.demand_by_service_type()
+        counts = [row["shipments"] for row in rows]
+        self.assertEqual(counts, sorted(counts, reverse=True))
+
+    def test_top_customers_is_ordered_by_shipments(self):
+        rows = queries.top_customers(limit=5)
+        self.assertEqual(len(rows), 5)
+        counts = [row["shipments"] for row in rows]
+        self.assertEqual(counts, sorted(counts, reverse=True))
+        self.assertTrue(all(row["business_name"] for row in rows))
+
+
+class DashboardViewTest(AuthenticatedTestCase):
     @classmethod
     def setUpTestData(cls):
         call_command("loaddata", "delay_causes", verbosity=0)
@@ -140,14 +161,14 @@ class DashboardViewTest(TestCase):
         self.assertIn("kpi", response.context)
 
 
-class EmptyWarehouseTest(TestCase):
+class EmptyWarehouseTest(AuthenticatedTestCase):
     def test_dashboard_shows_an_instruction_when_the_warehouse_is_empty(self):
         response = self.client.get(reverse("analytics_dashboard"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "run_etl")
 
 
-class OperationsViewTest(TestCase):
+class OperationsViewTest(AuthenticatedTestCase):
     @classmethod
     def setUpTestData(cls):
         call_command("loaddata", "delay_causes", verbosity=0)
@@ -161,6 +182,14 @@ class OperationsViewTest(TestCase):
         self.assertContains(response, "Operadores con más entregas")
         self.assertContains(response, "Saturación por día y hora")
         self.assertContains(response, "Causas de retraso")
+        self.assertContains(response, "Demanda por tipo de servicio")
+        self.assertContains(response, "Clientes con mayor demanda")
+
+    def test_operations_exposes_the_demand_payloads(self):
+        response = self.client.get(reverse("analytics_operations"))
+        self.assertIn("service_demand", response.context)
+        self.assertIn("service_demand_json", response.context)
+        self.assertIn("top_customers", response.context)
 
     def test_operations_exposes_heatmap_and_pareto(self):
         response = self.client.get(reverse("analytics_operations"))
@@ -189,7 +218,7 @@ class OperationsViewTest(TestCase):
         self.assertGreaterEqual(len(response.context["alerts"]), 0)
 
 
-class PredictionViewTest(TestCase):
+class PredictionViewTest(AuthenticatedTestCase):
     @classmethod
     def setUpClass(cls):
         # Patches must be live before setUpTestData() runs train_models(),
@@ -247,7 +276,7 @@ class PredictionViewTest(TestCase):
         self.assertContains(response, "Rutas")
 
 
-class UntrainedModelTest(TestCase):
+class UntrainedModelTest(AuthenticatedTestCase):
     """Deviation from the brief: the artifact deletion that the brief placed
     inside test_prediction_view_explains_how_to_train is moved to setUp().
 
@@ -260,6 +289,7 @@ class UntrainedModelTest(TestCase):
     """
 
     def setUp(self):
+        super().setUp()
         # Point the artifact paths at a scratch directory before deleting
         # anything: this test must never touch the real, trained models on
         # disk, only prove the views degrade gracefully when nothing is
@@ -288,7 +318,7 @@ class UntrainedModelTest(TestCase):
         self.assertContains(response, "train_models")
 
 
-class ExportTest(TestCase):
+class ExportTest(AuthenticatedTestCase):
     @classmethod
     def setUpTestData(cls):
         call_command("loaddata", "delay_causes", verbosity=0)
@@ -329,6 +359,12 @@ class ExportTest(TestCase):
         for slug in exports.REPORTS:
             response = self.client.get(reverse("analytics_export", args=[slug, "csv"]))
             self.assertEqual(response.status_code, 200, slug)
+
+    def test_the_demand_reports_are_exportable(self):
+        from apps.analytics import exports
+
+        self.assertIn("demanda-servicio", exports.REPORTS)
+        self.assertIn("demanda-cliente", exports.REPORTS)
 
     def test_unknown_report_returns_404(self):
         response = self.client.get(

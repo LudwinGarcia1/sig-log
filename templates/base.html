@@ -18,6 +18,7 @@
     </button>
     <div class="collapse navbar-collapse" id="nav">
       <ul class="navbar-nav me-auto">
+        {% if user.is_authenticated %}
         {% for url_name, label, emphasised in nav_items %}
         {% nav_url url_name as href %}
         {% if href %}
@@ -26,7 +27,17 @@
         </li>
         {% endif %}
         {% endfor %}
+        {% endif %}
       </ul>
+      {% if user.is_authenticated %}
+      <div class="d-flex align-items-center gap-2">
+        <span class="navbar-text small">{{ user.get_username }}</span>
+        <form method="post" action="{% url 'logout' %}" class="m-0">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-outline-light">Salir</button>
+        </form>
+      </div>
+      {% endif %}
     </div>
   </div>
 </nav>

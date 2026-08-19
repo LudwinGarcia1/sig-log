@@ -7,6 +7,7 @@ either the warehouse is empty (run_etl) or the ML artifacts are untrained
 (train_models) — instead of raising.
 """
 
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 from apps.analytics import exports, queries
@@ -19,6 +20,7 @@ def _money(value):
     return f"${value:,.0f}"
 
 
+@login_required
 def dashboard(request):
     """Executive summary. Reads the warehouse, never the OLTP."""
     if queries.warehouse_is_empty():
@@ -61,8 +63,9 @@ def dashboard(request):
     })
 
 
+@login_required
 def operations(request):
-    """P1, P3, P4, P6 and P10 on one screen."""
+    """P1, P3, P4, P6 and P10, plus the service-demand mix, on one screen."""
     if queries.warehouse_is_empty():
         return render(request, "analytics/operations.html",
                       {"section": "operations", "warehouse_empty": True})
@@ -71,6 +74,7 @@ def operations(request):
     pareto = queries.delay_causes_pareto()
     top = queries.top_routes(limit=10)
     operators = queries.top_operators(limit=10)
+    service_demand = queries.demand_by_service_type()
 
     return render(request, "analytics/operations.html", {
         "section": "operations",
@@ -89,9 +93,16 @@ def operations(request):
             "labels": [row["employee_number"] for row in operators],
             "values": [row["deliveries"] for row in operators],
         },
+        "service_demand": service_demand,
+        "service_demand_json": {
+            "labels": [row["service_type"] for row in service_demand],
+            "values": [row["shipments"] for row in service_demand],
+        },
+        "top_customers": queries.top_customers(limit=10),
     })
 
 
+@login_required
 def costs(request):
     """P2 and P5."""
     if queries.warehouse_is_empty():
@@ -119,6 +130,7 @@ def costs(request):
     })
 
 
+@login_required
 def alerts(request):
     """P7 — reads the OLTP on purpose. See the spec, section 4.9."""
     rows = maintenance_alerts()
@@ -131,6 +143,7 @@ def alerts(request):
     })
 
 
+@login_required
 def predictions(request):
     """Unidad III in the UI: score a delivery and show how the model performs.
 
@@ -170,6 +183,7 @@ def predictions(request):
     })
 
 
+@login_required
 def clusters(request):
     """Unidad IV in the UI: the PCA plane and the profile of every group."""
     prepared = unsupervised.load_clusters()
@@ -198,6 +212,7 @@ def clusters(request):
     })
 
 
+@login_required
 def export_report(request, slug, fmt):
     """Serve a report as CSV or Excel. The format is the only branch here."""
     if fmt == "xlsx":
