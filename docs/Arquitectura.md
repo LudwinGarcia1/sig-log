@@ -53,6 +53,26 @@ por otro sistema externo sin construir esa capa después. Está fuera del
 alcance comprometido (`docs/superpowers/specs/2026-08-16-sig-log-design.md`,
 §2.1).
 
+## 2.1 Control de acceso en el mixin, no en un middleware
+
+**Se eligió:** `LoginRequiredMixin` como base de `CrudContextMixin` y
+`@login_required` en las vistas de función.
+
+**Se descartó:** un middleware que exigiera sesión en toda petición con una
+lista de rutas exentas.
+
+**Por qué:** el motor CRUD ya concentra las cuatro vistas de los siete
+módulos de captura en un solo mixin, así que heredar ahí protege veintiocho
+vistas con una línea, y en el mismo lugar donde vive el resto del
+comportamiento compartido. Un middleware, en cambio, tendría que mantener
+una lista de excepciones (la pantalla de acceso, los estáticos) que se
+desincroniza en cuanto se agrega una ruta.
+
+**Costo:** la protección es responsabilidad de cada vista nueva. Una vista de
+función que se agregue sin `@login_required` queda abierta; las pruebas de
+`apps/core/tests/test_authentication.py` recorren la lista de pantallas
+justamente para que ese descuido falle en la suite.
+
 ## 3. Modelo estrella, no copo de nieve
 
 **Se eligió:** siete dimensiones desnormalizadas (`dim_date`, `dim_time`,

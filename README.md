@@ -69,6 +69,7 @@ rol: [`docs/Manual_Tecnico.md`](docs/Manual_Tecnico.md#2-requisitos-e-instalaci�
 
 ```powershell
 python manage.py migrate
+python manage.py createsuperuser
 python manage.py loaddata delay_causes
 python manage.py seed_demo --months 18 --seed 42
 python manage.py run_etl --rebuild
@@ -76,12 +77,18 @@ python manage.py train_models
 python manage.py runserver
 ```
 
-Con el servidor arriba, entra a `http://127.0.0.1:8000/`. El orden importa:
+Con el servidor arriba, entra a `http://127.0.0.1:8000/`. El sistema pide
+sesión: se abre la pantalla de acceso y entras con el usuario que creaste en
+el paso `createsuperuser`. El orden importa:
 `migrate` crea los esquemas `public`, `staging` y `dw`; `loaddata` carga el
 catálogo de causas de retraso que `seed_demo` exige encontrar; `seed_demo`
 genera 18 meses de operación sintética con semilla fija (reproducible);
 `run_etl --rebuild` puebla el almacén desde cero; `train_models` entrena los
 cuatro modelos de minería y genera sus figuras de diagnóstico.
+
+`createsuperuser` es interactivo y pide usuario, correo y contraseña. El
+repositorio no incluye credenciales a propósito: todas las pantallas de
+captura y de reportes exigen sesión, así que sin ese paso no se puede entrar.
 
 `python manage.py test` ya no toca `ml/artifacts/` ni `static/ml/`: las
 pruebas que entrenan modelos redirigen esos artefactos a un directorio
@@ -155,6 +162,8 @@ SIG_LOG/
 | M7 Mantenimiento | `/mantenimiento/` | Órdenes de taller, preventivas y correctivas. |
 | M8 Reportes y análisis | `/reportes/` | Dashboard, costos, alertas, predicción y conglomerados. |
 
+Todas las pantallas viven detrás de `/entrar/`; `/salir/` cierra la sesión.
+
 ## Documentación
 
 | Documento | Contenido |
@@ -175,8 +184,9 @@ SIG_LOG/
 python manage.py test
 ```
 
-La suite corre 201 pruebas: reglas de negocio de cada módulo, las ocho técnicas
-de limpieza del ETL con caso válido e inválido, el proceso ETL de extremo a
-extremo, la ausencia de fuga de datos en las matrices de minería y el
-entrenamiento completo de los cuatro modelos. Recuerda re-entrenar los modelos
-después de correr la suite (ver advertencia arriba).
+La suite corre 217 pruebas: reglas de negocio de cada módulo, el control de
+acceso de las quince pantallas, las ocho técnicas de limpieza del ETL con caso
+válido e inválido, el proceso ETL de extremo a extremo, la ausencia de fuga de
+datos en las matrices de minería y el entrenamiento completo de los cuatro
+modelos. No hace falta re-entrenar después: la suite ya no toca
+`ml/artifacts/` (ver arriba).

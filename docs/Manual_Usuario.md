@@ -17,10 +17,25 @@ nunca ha visto el sistema.
 ## 2. Cómo ingresar
 
 Con el servidor corriendo (`python manage.py runserver`), abre
-`http://127.0.0.1:8000/` en el navegador. La barra superior lista los ocho
-módulos; el resaltado en negritas ("Reportes") es el módulo de análisis.
+`http://127.0.0.1:8000/` en el navegador. El sistema pide sesión, así que lo
+primero que verás es la pantalla de acceso:
 
-![Inicio](img/01_inicio.jpg)
+![Acceso](img/01_acceso.jpg)
+
+Escribe el usuario y la contraseña que creó quien instaló el sistema con
+`python manage.py createsuperuser` y presiona **Entrar**. Si tecleas mal algo,
+la misma pantalla lo avisa y te deja intentar de nuevo.
+
+Ya dentro, la barra superior lista los ocho módulos; el resaltado en negritas
+("Reportes") es el módulo de análisis. A la derecha aparece tu nombre de
+usuario y el botón **Salir**, que cierra la sesión y te regresa a la pantalla
+de acceso.
+
+![Inicio](img/02_inicio.jpg)
+
+Si todavía no has iniciado sesión y escribes directo una dirección como
+`/reportes/costos/`, el sistema te manda primero al acceso y, en cuanto
+entras, te deposita en esa misma pantalla.
 
 ## 3. Capítulo por módulo
 
@@ -43,7 +58,7 @@ allá de estas normalizaciones.
 desaparece de la lista y de los selectores de nuevas entregas, pero sus
 entregas históricas permanecen intactas para la auditoría y para el ETL.
 
-![Lista de clientes](img/02_clientes_lista.jpg)
+![Lista de clientes](img/03_clientes_lista.jpg)
 
 ### 3.2 Vehículos
 
@@ -65,8 +80,8 @@ capturar una entrega, una carga de combustible o un mantenimiento nuevos.
 
 ### 3.3 Operadores
 
-Choferes asignados a las entregas. El sistema no tiene una pantalla
-capturada para este módulo, pero su patrón es idéntico a los demás.
+Choferes asignados a las entregas. El buscador filtra por número de empleado,
+nombre o número de licencia.
 
 **Registrar un operador**: número de empleado (único), nombre, apellidos,
 número de licencia, tipo de licencia (A, B, C o E — federal), vigencia de la
@@ -74,15 +89,21 @@ licencia, fecha de ingreso, teléfono y estatus (Activo, Vacaciones,
 Inactivo). El formulario rechaza una vigencia de licencia anterior a la
 fecha de ingreso.
 
+![Lista de operadores](img/05_operadores_lista.jpg)
+
 ### 3.4 Rutas
 
-Corredores fijos origen-destino que la flotilla atiende. Tampoco tiene
-captura de pantalla propia.
+Corredores fijos origen-destino que la flotilla atiende.
 
 **Registrar una ruta**: código único (`RUT-001`), nombre, ciudad de origen y
 destino, distancia en kilómetros (debe ser mayor que cero), duración estimada
 en minutos, tipo de ruta (Local, Regional, Foránea), zona y costo de
 casetas.
+
+El tipo de ruta que elijas aquí es el que agrupa la demanda por servicio en el
+reporte de Operación (sección 5.2).
+
+![Lista de rutas](img/06_rutas_lista.jpg)
 
 ### 3.5 Entregas
 
@@ -110,12 +131,11 @@ rechaza una carga que supere el doble de la capacidad del tanque del
 vehículo — probablemente un error de captura), precio por litro y odómetro
 (no puede ser negativo). El costo total se calcula solo.
 
-![Lista de combustible](img/09_combustible_lista.jpg)
+![Lista de combustible](img/08_combustible_lista.jpg)
 
 ### 3.7 Mantenimiento
 
-Órdenes de taller contra un vehículo. No hay captura de pantalla para la
-lista, pero comparte el patrón de los demás módulos.
+Órdenes de taller contra un vehículo.
 
 **Registrar un mantenimiento**: folio único, vehículo, tipo (Preventivo o
 Correctivo), fecha de servicio, odómetro, descripción, taller, mano de obra,
@@ -126,6 +146,8 @@ proceso, Completado). El costo total se calcula solo.
 Al completar una orden desde el botón correspondiente, el sistema actualiza
 también el vehículo: su odómetro, su próximo kilometraje de servicio, la
 fecha de su último servicio y su estatus vuelven a "Disponible".
+
+![Lista de mantenimiento](img/09_mantenimiento_lista.jpg)
 
 ## 4. Registrar la llegada de una entrega
 
@@ -149,7 +171,7 @@ explica cómo leerla, no solo qué contiene.
 
 ### 5.1 Panel general
 
-![Panel general](img/11_panel_general.jpg)
+![Panel general](img/10_panel_general.jpg)
 
 Ocho tarjetas con los indicadores del periodo: entregas cerradas,
 cumplimiento (porcentaje dentro de la tolerancia de 15 minutos), retraso
@@ -160,8 +182,14 @@ dona reparte el gasto entre combustible y mantenimiento.
 
 ### 5.2 Operación
 
-![Operación](img/12_operacion.jpg)
+![Operación](img/11_operacion.jpg)
 
+- **Demanda por tipo de servicio**: la dona reparte los envíos entre Local,
+  Regional y Foránea. En la tabla de abajo, el renglón resaltado es el
+  servicio con mayor demanda; junto a cada uno verás su participación sobre
+  el total y su tasa de retraso.
+- **Clientes con mayor demanda**: los diez clientes con más envíos, con la
+  ciudad, el tipo de cliente y el flete que aportan.
 - **Rutas más utilizadas** y **operadores con más entregas**: barras
   ordenadas de mayor a menor, con su tabla al lado.
 - **Rutas con mayores retrasos**: solo considera rutas con al menos 20
@@ -174,9 +202,12 @@ dona reparte el gasto entre combustible y mantenimiento.
   80% son las prioritarias — atacar esas primero reduce la mayoría de los
   retrasos con el menor número de acciones.
 
+Los seis botones de la parte superior descargan cualquiera de estos cuadros
+en CSV o Excel, incluidos los dos de demanda.
+
 ### 5.3 Costos
 
-![Costos](img/13_costos.jpg)
+![Costos](img/12_costos.jpg)
 
 - **Costo total por vehículo**: barras apiladas de combustible y
   mantenimiento por unidad. El combustible pesa más que el mantenimiento en
@@ -188,7 +219,7 @@ dona reparte el gasto entre combustible y mantenimiento.
 
 ### 5.4 Alertas de mantenimiento
 
-![Alertas de mantenimiento](img/14_alertas_mantenimiento.jpg)
+![Alertas de mantenimiento](img/13_alertas_mantenimiento.jpg)
 
 Esta pantalla no lee el almacén de datos: lee directamente los vehículos
 activos, porque "¿qué vehículo necesita servicio hoy?" es una pregunta del
@@ -200,7 +231,7 @@ siguiente servicio.
 
 ### 5.5 Predicción de retraso
 
-![Predicción](img/15_prediccion.jpg)
+![Predicción](img/14_prediccion.jpg)
 
 El formulario pide únicamente datos conocidos **antes** de que la entrega
 salga: ruta, hora y día de salida, peso, bultos, tipo de vehículo y su
@@ -220,7 +251,7 @@ el gráfico de residuales de la regresión y las variables más influyentes.
 
 ### 5.6 Conglomerados de rutas
 
-![Conglomerados](img/16_conglomerados.jpg)
+![Conglomerados](img/15_conglomerados.jpg)
 
 El plano muestra cada ruta como un punto, coloreado según el grupo al que
 pertenece. Los ejes son los dos componentes principales — combinaciones de
@@ -261,3 +292,14 @@ referenciado por una entrega.** Las llaves foráneas de `Delivery` usan
 `PROTECT`: la base de datos rechaza el borrado mientras exista al menos una
 entrega que dependa de ese registro. Es la misma razón por la que "dar de
 baja" desactiva en vez de borrar — ver `docs/Arquitectura.md`.
+
+**Olvidé mi contraseña o no tengo usuario.** El sistema no tiene
+recuperación por correo. Pide a quien administra el servidor que ejecute
+`python manage.py createsuperuser` para darte un usuario nuevo, o
+`python manage.py changepassword <usuario>` para reasignar el tuyo.
+
+**Me sacó del sistema y no había presionado "Salir".** La sesión dura dos
+semanas desde el último ingreso: es el valor por omisión de Django, y las
+sesiones se guardan en la base de datos, así que sobreviven a un reinicio
+del servidor. Vuelve a entrar con las mismas credenciales; no se pierde nada
+de lo que hayas guardado.

@@ -102,12 +102,12 @@ aritmética, solo dibuja lo que la vista ya calculó.
 
 ## 4. Dashboard y gráficas personalizadas
 
-![Inicio](img/01_inicio.jpg)
+![Inicio](img/02_inicio.jpg)
 
 Página de bienvenida con acceso a los ocho módulos desde la barra de
 navegación superior.
 
-![Lista de clientes](img/02_clientes_lista.jpg)
+![Lista de clientes](img/03_clientes_lista.jpg)
 
 Patrón de lista común a los siete módulos de captura: buscador, tabla
 paginada y acciones de editar/dar de baja por fila.
@@ -122,12 +122,12 @@ columna.
 El módulo central del sistema: cada fila es una entrega con su cliente,
 ruta, vehículo, operador y estatus.
 
-![Lista de combustible](img/09_combustible_lista.jpg)
+![Lista de combustible](img/08_combustible_lista.jpg)
 
 Cargas de combustible registradas, con el costo total ya calculado por
 fila.
 
-![Panel general](img/11_panel_general.jpg)
+![Panel general](img/10_panel_general.jpg)
 
 Ocho tarjetas de KPI (entregas del periodo, cumplimiento, retraso promedio,
 kilómetros, ingreso por flete, rendimiento medio, costo de combustible,
@@ -139,39 +139,40 @@ respecto a lo programado. El gasto acumulado es de $59,294,263 en flete
 cobrado, $16,204,931 en combustible y $5,481,613 en mantenimiento, sobre
 2,810,648 km recorridos.
 
-![Operación](img/12_operacion.jpg)
+![Operación](img/11_operacion.jpg)
 
-Rutas más utilizadas, operadores con más entregas, rutas con mayores
-retrasos, el mapa de calor de saturación y el Pareto de causas — el detalle
-de lectura de cada uno está en la sección 5.
+Demanda por tipo de servicio (dona más tabla, con el servicio líder
+resaltado), clientes con mayor demanda, rutas más utilizadas, operadores con
+más entregas, rutas con mayores retrasos, el mapa de calor de saturación y
+el Pareto de causas — el detalle de lectura de cada uno está en las
+secciones 5 y 6.
 
-![Costos](img/13_costos.jpg)
+![Costos](img/12_costos.jpg)
 
 Costo total por vehículo (combustible contra mantenimiento), rendimiento
 por vehículo y costo por kilómetro por ruta.
 
-![Alertas de mantenimiento](img/14_alertas_mantenimiento.jpg)
+![Alertas de mantenimiento](img/13_alertas_mantenimiento.jpg)
 
 Vehículos que requieren servicio, clasificados por severidad; se calcula
 sobre el OLTP, no sobre el almacén (razón en `docs/Arquitectura.md`,
 decisión 6).
 
-![Predicción](img/15_prediccion.jpg)
+![Predicción](img/14_prediccion.jpg)
 
 Formulario de predicción de retraso junto con la tabla de métricas de los
 dos algoritmos comparados, la matriz de confusión, el gráfico de residuales
 y las variables más influyentes.
 
-![Conglomerados](img/16_conglomerados.jpg)
+![Conglomerados](img/15_conglomerados.jpg)
 
 El plano de componentes principales coloreado por conglomerado, junto con
 la tabla de perfil de cada grupo.
 
-No existe una captura propia para las listas de Operadores, Rutas y
-Mantenimiento, ni para el formulario de registro de llegada de una entrega
-— su descripción textual está en `docs/Manual_Usuario.md`, secciones 3.3,
-3.4, 3.7 y 4; su patrón visual es idéntico al de las listas ya mostradas
-arriba.
+Las quince capturas cubren la pantalla de acceso, el inicio, las siete
+listas de captura y las seis pantallas de análisis. La única pantalla sin
+imagen propia es el formulario de registro de llegada de una entrega, que se
+describe en `docs/Manual_Usuario.md`, sección 4.
 
 ## 5. Interpretación de resultados — las diez preguntas del caso de estudio
 
@@ -278,3 +279,41 @@ lunes a sábado (no hay operación en domingo). **Acción:** la saturación es
 un fenómeno de hora, no de día — cualquier medida de mitigación (más
 unidades disponibles, ventanas de entrega más amplias) debe concentrarse en
 las seis horas pico, no distribuirse por día de la semana.
+
+## 6. Patrones de demanda del objetivo general
+
+Además de las diez preguntas del caso de estudio, el objetivo general pide
+identificar patrones de demanda. La pantalla de Operación los responde en
+sus dos primeros paneles.
+
+**Demanda de servicios y servicio con mayor demanda.** El reparto de los
+26,886 envíos entre los tres tipos de ruta es desigual y estable:
+
+| Servicio | Envíos | Participación | % retraso | Flete acumulado | Rutas |
+|---|---:|---:|---:|---:|---:|
+| **LOCAL** | **17,395** | **64.7%** | 67.9% | $13,333,916 | 24 |
+| REGIONAL | 8,014 | 29.8% | 11.4% | $27,637,188 | 22 |
+| FORÁNEA | 1,477 | 5.5% | 9.3% | $18,323,160 | 14 |
+
+El servicio con mayor demanda es el **LOCAL**, con casi dos de cada tres
+envíos. Pero el volumen y el ingreso apuntan en direcciones opuestas: el
+servicio local mueve el 64.7% de los envíos y aporta apenas el 22.5% del
+flete, mientras que el foráneo, con el 5.5% de los envíos, aporta el 30.9%.
+Y es justo el servicio de mayor volumen el que concentra el problema de
+calidad: 67.9% de retraso, contra 11.4% y 9.3% de los otros dos.
+**Acción:** la operación local es la que define la percepción del servicio
+por número de entregas, y la que más margen de mejora tiene; la foránea es
+la que sostiene el ingreso y ya opera bien, así que la prioridad de
+intervención es clara y no compite con la de facturación.
+
+**Clientes con mayor demanda.** La cartera está encabezada por
+`CLI-0010` — Laboratorios Olivo y Saldaña, con 711 envíos y $1,520,830 de
+flete — seguida de `CLI-0014` (709) y `CLI-0017` (709). Los diez primeros
+son todos de tipo PREMIUM, y sus tasas de retraso rondan el 50%, muy por
+encima del 47.8% global, porque su demanda se concentra en las rutas
+urbanas. **Acción:** son los clientes con más exposición al problema de
+retraso local, y por lo tanto los primeros a los que conviene comunicar
+cualquier mejora en ese servicio.
+
+**Mayor frecuencia y rutas con mayor número de envíos.** Ver P1 (rutas más
+utilizadas) y P10 (horarios de mayor saturación) en la sección 5.

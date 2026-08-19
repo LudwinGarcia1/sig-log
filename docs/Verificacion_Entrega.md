@@ -162,3 +162,60 @@ remedio manual descrito arriba deja de ser necesario.
 | Arranque desde base vacía | 79.7 s, sin pasos manuales |
 
 Verificado sobre la rama `feature/sig-log-implementation`.
+
+**Este corte quedó superado por la sección 6**, que registra la verificación
+del 18 de agosto tras cerrar los tres pendientes: 217 pruebas y control de
+acceso en todas las pantallas.
+
+
+---
+
+## 6. Segunda verificación — 18 de agosto de 2026
+
+Después del acta original se cerraron tres pendientes: el reporte de demanda
+por tipo de servicio y por cliente, las capturas faltantes del manual de
+usuario y el control de acceso. Esto es lo que se verificó sobre esos
+cambios, en la rama `main`.
+
+### 6.1 Lo que se ejecutó
+
+| Comprobación | Resultado |
+|---|---|
+| `python manage.py check` | Sin incidencias (0 silenciadas) |
+| `python manage.py test` | **217 pruebas, `OK`**, 367.9 s |
+| Las 14 pantallas protegidas con sesión abierta | Las 14 responden 200 |
+| Las 14 pantallas protegidas sin sesión | Las 14 responden 302 hacia `/entrar/?next=<ruta>`, sin excepciones |
+| Las 4 exportaciones sin sesión | Las 4 responden 302 hacia `/entrar/` |
+| `/entrar/` sin sesión | 200 — es la única ruta abierta |
+| `demanda-servicio.csv` | 200 · encabezados en español · los 3 tipos de servicio |
+| `demanda-cliente.xlsx` | 200 · 12,098 bytes de libro de Excel |
+| `ml/artifacts/metrics.json` tras la suite | Intacto: 26,886 filas, F1 0.7795, silueta 0.7381 |
+
+Las 217 pruebas son 16 más que las 201 del acta original: once de control de
+acceso (`apps/core/tests/test_authentication.py`) y cinco de los reportes de
+demanda.
+
+El desglose por paquete del `Manual_Tecnico.md` no cuadraba con el total
+(84+55+37+13 = 189, no 201); se corrigió con los conteos reales medidos con
+`DiscoverRunner.build_suite`: `apps` 109, `warehouse` 57, `ml` 38, `seed` 13.
+
+### 6.2 Demanda por tipo de servicio
+
+Medido sobre las 26,886 entregas del almacén:
+
+| Servicio | Envíos | Participación | % retraso | Flete |
+|---|---:|---:|---:|---:|
+| **LOCAL** | **17,395** | **64.7%** | 67.9% | $13,333,916 |
+| REGIONAL | 8,014 | 29.8% | 11.4% | $27,637,188 |
+| FORÁNEA | 1,477 | 5.5% | 9.3% | $18,323,160 |
+
+### 6.3 Lo que no se volvió a ejecutar
+
+**El arranque desde base vacía de la sección 1 no se repitió.** Habría
+exigido destruir la base de datos de trabajo, que hoy contiene los modelos
+entrenados sobre las 26,886 entregas. Ninguno de los tres cambios toca el
+ETL, el generador ni el esquema del almacén: la única migración añadida es la
+de `django.contrib.auth`, que ya corría desde el inicio porque la aplicación
+siempre estuvo en `INSTALLED_APPS`. La secuencia documentada sí incorpora un
+paso nuevo, `python manage.py createsuperuser`, sin el cual no se puede
+entrar al sistema.

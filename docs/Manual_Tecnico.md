@@ -80,6 +80,19 @@ Copy-Item .env.example .env
 Edita `.env` con las credenciales del rol `siglog` y ejecuta la puesta en
 marcha descrita en el `README.md` raíz.
 
+### 2.3 Crear el usuario de acceso
+
+El sistema completo está detrás de una sesión, así que después de `migrate`
+hay que crear al menos un usuario:
+
+```powershell
+python manage.py createsuperuser
+```
+
+El comando pide usuario, correo y contraseña de forma interactiva. No hay
+credenciales en el repositorio a propósito: quien instala el sistema define
+las suyas. El mismo usuario sirve para el sitio y para `/admin/`.
+
 ## 3. Configuración
 
 Todas las variables viven en `.env` (fuera de control de versiones;
@@ -95,6 +108,24 @@ Todas las variables viven en `.env` (fuera de control de versiones;
 | `DB_PORT` | Puerto de PostgreSQL | `5432` |
 | `DJANGO_SECRET_KEY` | Clave de firma de Django | clave insegura de desarrollo si se omite |
 | `DJANGO_DEBUG` | Modo de depuración | `True` |
+
+### 3.1 Control de acceso
+
+`config/settings.py` declara `LOGIN_URL = "/entrar/"`,
+`LOGIN_REDIRECT_URL = "/"` y `LOGOUT_REDIRECT_URL = "/entrar/"` como rutas
+literales, no como nombres de URL: el urlconf reducido que usan las pruebas
+del motor CRUD no declara la vista de acceso, y un nombre por resolver las
+rompería.
+
+La protección entra por dos lugares y nada más:
+
+| Punto | Qué cubre |
+|---|---|
+| `LoginRequiredMixin` en `CrudContextMixin` (`apps/core/views.py`) | Las cuatro vistas CRUD de los siete módulos de captura |
+| `@login_required` | Las seis pantallas de `apps/analytics/views.py`, la exportación, `delivery_arrival` y `HomeView` |
+
+Un visitante anónimo recibe 302 hacia `/entrar/?next=<ruta>`, así que después
+de firmar aterriza en la pantalla que pidió.
 
 El sistema nunca se conecta como `postgres`: `DATABASES["default"]["USER"]`
 en `config/settings.py` toma el valor de `DB_USER`, que en todo entorno
@@ -327,6 +358,8 @@ de los dos directorios está pensado para editarse a mano.
 | `seed_demo` | `--months N` (por defecto 18) · `--seed N` (por defecto 42) · `--dirty-rate F` (por defecto 0.03) | Borra y regenera clientes, vehículos, operadores, rutas, entregas, combustible y mantenimiento con los patrones sembrados descritos en `docs/U1_Analisis_Metodologia.md`. Exige que el catálogo de causas ya exista (`loaddata delay_causes`). |
 | `run_etl` | `--full` · `--rebuild` | Corre las tres fases del ETL. Sin flags, extracción incremental. |
 | `train_models` | `--k N` · `--random-state N` | Entrena los cuatro modelos, guarda artefactos y figuras. |
+| `createsuperuser` | — | Crea un usuario con acceso al sitio y a `/admin/`. Interactivo. |
+| `changepassword` | `<usuario>` | Reasigna la contraseña de un usuario existente. |
 
 ## 9. Pruebas
 
@@ -334,13 +367,13 @@ de los dos directorios está pensado para editarse a mano.
 python manage.py test
 ```
 
-201 pruebas repartidas así:
+217 pruebas repartidas así:
 
 | Paquete | Enfoque |
 |---|---|
-| `apps/*/tests.py` (84 pruebas) | Reglas de negocio por módulo: cálculo de retraso y exigencia de causa en `deliveries.services`, umbrales de `vehicles.services.maintenance_alerts`, rendimiento entre cargas consecutivas en `fuel.services`, cierre de orden en `maintenance.services`, el CRUD genérico y las respuestas de `analytics.queries`. |
-| `warehouse/tests/*` (55 pruebas) | Una prueba por técnica de limpieza con caso válido e inválido, extracción incremental y completa, carga de dimensiones y hechos, ETL de extremo a extremo. |
-| `ml/tests/*` (37 pruebas) | Ausencia de columnas con fuga de datos, entrenamiento de ambos clasificadores y del regresor, barrido de k y elección del conglomerado, ejecución completa de `train_models`. |
+| `apps/*` (109 pruebas) | Reglas de negocio por módulo: cálculo de retraso y exigencia de causa en `deliveries.services`, umbrales de `vehicles.services.maintenance_alerts`, rendimiento entre cargas consecutivas en `fuel.services`, cierre de orden en `maintenance.services`, el CRUD genérico, las respuestas de `analytics.queries` y el control de acceso de las quince pantallas (`apps/core/tests/test_authentication.py`). |
+| `warehouse/tests/*` (57 pruebas) | Una prueba por técnica de limpieza con caso válido e inválido, extracción incremental y completa, carga de dimensiones y hechos, ETL de extremo a extremo. |
+| `ml/tests/*` (38 pruebas) | Ausencia de columnas con fuga de datos, entrenamiento de ambos clasificadores y del regresor, barrido de k y elección del conglomerado, ejecución completa de `train_models`. |
 | `seed/tests.py` (13 pruebas) | Volumen generado y que las tasas de retraso caigan dentro del rango realista que los patrones sembrados prometen. |
 
 **Sobre `train_models` en las pruebas:** `TrainModelsCommandTest`,
