@@ -5,7 +5,6 @@ venv/
 .env
 *.sqlite3
 staticfiles/
-ml/artifacts/*.joblib
 .idea/
 .vscode/
 *.log
