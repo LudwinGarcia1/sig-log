@@ -106,12 +106,20 @@ def kpi_summary(period=None):
         cost=Coalesce(Sum("total_cost"), ZERO)
     )
 
+    # Dos promedios distintos y fáciles de confundir: uno sobre todas las
+    # entregas (las puntuales aportan minutos pequeños y lo bajan) y otro sólo
+    # sobre las que excedieron la tolerancia. La pantalla muestra los dos.
+    late = _deliveries(period).filter(is_delayed=1).aggregate(
+        avg_delay=Coalesce(Avg("delay_minutes"), 0.0)
+    )
     total = deliveries["total"] or 0
     on_time = total - (deliveries["delayed"] or 0)
     return {
         "deliveries": total,
+        "delayed": deliveries["delayed"] or 0,
         "on_time_rate": round((on_time / total) * 100, 1) if total else 0.0,
         "avg_delay_minutes": round(float(deliveries["avg_delay"] or 0), 1),
+        "avg_delay_when_late": round(float(late["avg_delay"] or 0), 1),
         "total_freight": deliveries["freight"],
         "total_km": deliveries["km"],
         "avg_efficiency": round(float(fuel["efficiency"] or 0), 2),

@@ -166,32 +166,65 @@ regresa a "Disponible" automáticamente.
 
 ## 5. Reportes y análisis
 
-Cinco pantallas, todas bajo "Reportes" en la barra de navegación. Cada una
+Seis pantallas, todas bajo "Reportes" en la barra de navegación. Cada una
 explica cómo leerla, no solo qué contiene.
+
+### 5.0 Elegir el periodo
+
+Arriba de las seis pantallas hay un selector de fechas. Escribe un rango en
+**Desde** y **Hasta** y presiona **Aplicar**, o usa uno de los cuatro
+atajos: Todo, Último mes, Último trimestre, Último año. A la derecha se
+anuncia siempre qué rango está vigente.
+
+Todo lo que ves debajo respeta ese periodo: las tarjetas, las tablas, las
+gráficas y los archivos que descargues. Cambiar de pantalla conserva el
+periodo mientras no lo modifiques.
+
+Dos cosas que conviene saber:
+
+- Los atajos se cuentan desde **la última fecha con datos**, no desde hoy.
+  Si el almacén termina el 31 de julio, "Último mes" es julio, aunque hoy
+  sea septiembre. Contarlos desde hoy dejaría la pantalla vacía.
+- Si eliges un rango sin entregas, las pantallas muestran ceros y tablas
+  vacías. No es un error: es que en ese periodo no hubo operación.
 
 ### 5.1 Panel general
 
 ![Panel general](img/10_panel_general.jpg)
 
-Ocho tarjetas con los indicadores del periodo: entregas cerradas,
-cumplimiento (porcentaje dentro de la tolerancia de 15 minutos), retraso
-promedio, kilómetros recorridos, ingreso por flete, rendimiento medio de
-combustible, y los dos costos (combustible y mantenimiento). Debajo, una
-línea muestra la tendencia mensual de entregas y entregas con retraso, y una
-dona reparte el gasto entre combustible y mantenimiento.
+Nueve tarjetas con los indicadores del periodo: entregas cerradas,
+cumplimiento (porcentaje dentro de la tolerancia de 15 minutos), los dos
+retrasos promedio, kilómetros recorridos, ingreso por flete, rendimiento
+medio de combustible, y los dos costos (combustible y mantenimiento).
+
+**Los dos retrasos promedio miden cosas distintas y por eso están
+separados.** "Retraso promedio" promedia *todas* las entregas, incluidas las
+puntuales, que aportan minutos pequeños y bajan el número. "Retraso de las
+tardías" promedia solo las que excedieron la tolerancia de 15 minutos. El
+primero sirve para ver la salud general; el segundo, para dimensionar cuánto
+se retrasa una entrega cuando se retrasa.
+
+Debajo, una línea muestra la tendencia mensual de entregas contra entregas
+con retraso, con el promedio del periodo dibujado como línea punteada y el
+mes más alto marcado y nombrado arriba de la gráfica. El pastel reparte el
+gasto entre combustible y mantenimiento, con el porcentaje de cada uno
+escrito en la leyenda.
 
 ### 5.2 Operación
 
 ![Operación](img/11_operacion.jpg)
 
-- **Demanda por tipo de servicio**: la dona reparte los envíos entre Local,
+- **Demanda por tipo de servicio**: el pastel reparte los envíos entre Local,
   Regional y Foránea. En la tabla de abajo, el renglón resaltado es el
   servicio con mayor demanda; junto a cada uno verás su participación sobre
   el total y su tasa de retraso.
 - **Clientes con mayor demanda**: los diez clientes con más envíos, con la
   ciudad, el tipo de cliente y el flete que aportan.
 - **Rutas más utilizadas** y **operadores con más entregas**: barras
-  ordenadas de mayor a menor, con su tabla al lado.
+  ordenadas de mayor a menor, con su tabla al lado. La barra más alta se
+  pinta en naranja y se nombra en el subtítulo; la línea punteada es el
+  promedio **de las diez barras mostradas**, no de todas las rutas ni de
+  todos los operadores.
 - **Rutas con mayores retrasos**: solo considera rutas con al menos 20
   envíos, para que el promedio no lo distorsione una ruta con dos entregas.
 - **Saturación por día y hora**: un mapa de calor. Entre más oscura la

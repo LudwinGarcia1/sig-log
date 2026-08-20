@@ -9,6 +9,7 @@ from django.urls import reverse
 
 from apps.analytics import queries
 from apps.core.tests.base import AuthenticatedTestCase
+from django.db.models import Avg
 from warehouse import models as dw
 from ml import evaluation, supervised, unsupervised
 
@@ -66,6 +67,26 @@ class AnalyticsQueriesTest(TestCase):
         self.assertGreater(summary["deliveries"], 0)
         self.assertGreaterEqual(summary["on_time_rate"], 0)
         self.assertLessEqual(summary["on_time_rate"], 100)
+
+    def test_the_two_delay_averages_are_different_numbers(self):
+        """29 min sobre todas y 57 sobre las tardías: no confundirlos."""
+        summary = queries.kpi_summary()
+        over_all = summary["avg_delay_minutes"]
+        when_late = summary["avg_delay_when_late"]
+        self.assertGreater(when_late, over_all)
+        self.assertEqual(
+            when_late,
+            round(
+                float(
+                    dw.FactDelivery.objects.filter(is_delayed=1).aggregate(
+                        a=Avg("delay_minutes")
+                    )["a"]
+                ),
+                1,
+            ),
+        )
+        self.assertEqual(summary["delayed"], dw.FactDelivery.objects.filter(
+            is_delayed=1).count())
 
     def test_monthly_trend_aligns_its_series(self):
         trend = queries.monthly_trend()

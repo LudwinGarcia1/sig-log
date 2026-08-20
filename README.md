@@ -170,6 +170,7 @@ Todas las pantallas viven detrás de `/entrar/`; `/salir/` cierra la sesión.
 |---|---|
 | [`docs/Manual_Usuario.md`](docs/Manual_Usuario.md) | Guía de uso, capítulo por módulo, con capturas. |
 | [`docs/Manual_Tecnico.md`](docs/Manual_Tecnico.md) | Instalación, configuración, ETL, minería, pruebas, despliegue. |
+| [`docs/Guia_Defensa.md`](docs/Guia_Defensa.md) | De dónde sale cada número: datos, periodos, porcentajes, promedios, máximos y reportes. |
 | [`docs/Arquitectura.md`](docs/Arquitectura.md) | Capas, esquemas, diagramas y decisiones de diseño. |
 | [`docs/Diccionario_Datos.md`](docs/Diccionario_Datos.md) | Cada tabla y columna, en los tres esquemas. |
 | [`docs/U1_Analisis_Metodologia.md`](docs/U1_Analisis_Metodologia.md) | Comparativo IA/ML/DM/Big Data y metodología CRISP-DM. |

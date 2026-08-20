@@ -307,6 +307,37 @@ python manage.py run_etl --full       # extracción completa, sin vaciar el DW
 python manage.py run_etl --rebuild    # vacía dimensiones y hechos, luego --full
 ```
 
+## 6.5 El filtro de periodo
+
+Las seis pantallas de análisis y las ocho exportaciones se acotan a un rango
+de fechas. El diseño tiene tres piezas y ninguna se repite:
+
+| Pieza | Archivo | Responsabilidad |
+|---|---|---|
+| `Period` | `apps/analytics/queries.py` | Guarda el rango, con ambos extremos opcionales, y sabe describirse para la pantalla |
+| `_scope()` | `apps/analytics/queries.py` | Aplica el filtro sobre `dim_date.full_date`, que está indexado |
+| `PeriodForm` | `apps/analytics/forms.py` | Valida las dos fechas y resuelve los atajos |
+
+Las nueve funciones de consulta reciben `period=None`; el filtro se escribe
+una vez en `_scope()` y llega a cada tabla de hechos por `_deliveries()`,
+`_fuel()` y `_maintenance()`. Un `Period()` sin límites se comporta igual que
+no pasar periodo, así que la ruta sin parámetros sigue devolviendo el
+histórico completo.
+
+**Los atajos se anclan en `data_bounds()`, no en `date.today()`.** El almacén
+puede terminar semanas atrás de la fecha del sistema —depende de cuándo se
+corrió el último `run_etl`— y un "último mes" contado desde hoy devolvería
+una pantalla vacía sin explicar por qué.
+
+**El periodo viaja en la cadena de consulta**, no en la sesión. Por eso los
+enlaces de exportación de las plantillas llevan `?{{ period_query }}`: un
+archivo descargado contiene exactamente lo que estaba en pantalla, y una URL
+con periodo se puede compartir o guardar en marcadores.
+
+El caso de un rango sin datos está cubierto por
+`test_an_empty_period_answers_zero_instead_of_crashing`: ninguna consulta
+divide entre cero ni indexa una lista vacía.
+
 ## 7. Los modelos de minería
 
 ### 7.1 Pipelines

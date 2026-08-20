@@ -129,19 +129,24 @@ fila.
 
 ![Panel general](img/10_panel_general.jpg)
 
-Ocho tarjetas de KPI (entregas del periodo, cumplimiento, retraso promedio,
-kilómetros, ingreso por flete, rendimiento medio, costo de combustible,
-costo de mantenimiento), la tendencia mensual de entregas contra entregas
-con retraso, y la dona de costos. Sobre las 26,886 entregas cerradas del
-almacén: 14,020 a tiempo y 12,866 con retraso — un cumplimiento de 52.2% y
-un retraso promedio de 29.2 minutos sobre las que sí llegaron tarde
-respecto a lo programado. El gasto acumulado es de $59,294,263 en flete
-cobrado, $16,204,931 en combustible y $5,481,613 en mantenimiento, sobre
-2,810,648 km recorridos.
+Nueve tarjetas de KPI (entregas del periodo, cumplimiento, retraso promedio,
+retraso de las tardías, kilómetros, ingreso por flete, rendimiento medio,
+costo de combustible, costo de mantenimiento), la tendencia mensual de
+entregas contra entregas con retraso, y el pastel de costos.
+
+Sobre las 26,886 entregas cerradas del almacén: 14,020 a tiempo y 12,866 con
+retraso respecto a su hora programada, lo que da un cumplimiento de 52.2%.
+El retraso promedio se publica de dos formas porque son dos preguntas
+distintas y es fácil confundirlas: **29.2 minutos** medido sobre todas las
+entregas (las puntuales, con 3.3 minutos de media, lo bajan) y **57.4
+minutos** contando sólo las 12,866 que excedieron la tolerancia de 15
+minutos. El gasto acumulado es de $59,294,263 en flete cobrado, $16,204,931
+en combustible y $5,481,613 en mantenimiento, sobre 2,810,648 km recorridos.
 
 ![Operación](img/11_operacion.jpg)
 
-Demanda por tipo de servicio (dona más tabla, con el servicio líder
+Demanda por tipo de servicio (pastel con los porcentajes escritos en la
+leyenda, más tabla, con el servicio líder
 resaltado), clientes con mayor demanda, rutas más utilizadas, operadores con
 más entregas, rutas con mayores retrasos, el mapa de calor de saturación y
 el Pareto de causas — el detalle de lectura de cada uno está en las
