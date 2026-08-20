@@ -219,3 +219,39 @@ de `django.contrib.auth`, que ya corría desde el inicio porque la aplicación
 siempre estuvo en `INSTALLED_APPS`. La secuencia documentada sí incorpora un
 paso nuevo, `python manage.py createsuperuser`, sin el cual no se puede
 entrar al sistema.
+
+
+---
+
+## 7. Tercera verificación — 20 de agosto de 2026
+
+Se agregó el filtro de periodo, se mejoró la lectura de las gráficas y se
+corrigió un dato mal descrito. Verificación sobre `main`.
+
+| Comprobación | Resultado |
+|---|---|
+| `python manage.py test` | **223 pruebas, `OK`**, 332.1 s |
+| Filtro de periodo contra SQL directo | Marzo 2026: 1,503 entregas y $3,284,825 en pantalla y en SQL |
+| Rango sin datos (dic 2026) | Ceros en las nueve tarjetas, sin excepción |
+| Rango invertido (inicio > fin) | Mensaje de validación; cae a todo el histórico |
+| Exportación con periodo | `demanda-servicio.csv` de marzo: 970 / 454 / 79, idéntico a la pantalla |
+| Atajos de periodo | Anclados en 2026-07-31, la última fecha con datos |
+
+Desglose por paquete, medido con `DiscoverRunner.build_suite`: `apps` 115,
+`warehouse` 57, `ml` 38, `seed` 13.
+
+### 7.1 Dato corregido
+
+La tarjeta "Retraso promedio" publicaba 29.2 minutos con la leyenda "Sobre la
+hora programada", y `U5_Visualizacion.md` afirmaba que esa cifra
+correspondía a las entregas que llegaron tarde. No era así:
+
+| Conjunto | Entregas | Retraso promedio |
+|---|---:|---:|
+| Todas | 26,886 | 29.2 min |
+| Excedieron la tolerancia de 15 min | 12,866 | 57.4 min |
+| Puntuales | 14,020 | 3.3 min |
+
+El panel publica ahora las dos cifras en tarjetas rotuladas, `kpi_summary`
+devuelve `avg_delay_when_late` junto a `avg_delay_minutes`, y una prueba fija
+que sean números distintos y correctos.

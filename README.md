@@ -185,8 +185,8 @@ Todas las pantallas viven detrás de `/entrar/`; `/salir/` cierra la sesión.
 python manage.py test
 ```
 
-La suite corre 217 pruebas: reglas de negocio de cada módulo, el control de
-acceso de las quince pantallas, las ocho técnicas de limpieza del ETL con caso
+La suite corre 223 pruebas: reglas de negocio de cada módulo, el control de
+acceso de las quince pantallas, el filtro de periodo con rango vacío, las ocho técnicas de limpieza del ETL con caso
 válido e inválido, el proceso ETL de extremo a extremo, la ausencia de fuga de
 datos en las matrices de minería y el entrenamiento completo de los cuatro
 modelos. No hace falta re-entrenar después: la suite ya no toca

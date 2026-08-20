@@ -323,4 +323,4 @@ Y comprueba, en este orden, que no haya sorpresas:
 5. Descarga un CSV y un Excel.
 6. Manda una predicción en `/reportes/prediccion/`.
 
-Si algo falla, `python manage.py test` en 217+ pruebas dice qué se rompió.
+Si algo falla, `python manage.py test` corre 223 pruebas y te dice qué se rompió.

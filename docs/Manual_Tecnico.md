@@ -398,11 +398,11 @@ de los dos directorios está pensado para editarse a mano.
 python manage.py test
 ```
 
-217 pruebas repartidas así:
+223 pruebas repartidas así:
 
 | Paquete | Enfoque |
 |---|---|
-| `apps/*` (109 pruebas) | Reglas de negocio por módulo: cálculo de retraso y exigencia de causa en `deliveries.services`, umbrales de `vehicles.services.maintenance_alerts`, rendimiento entre cargas consecutivas en `fuel.services`, cierre de orden en `maintenance.services`, el CRUD genérico, las respuestas de `analytics.queries` y el control de acceso de las quince pantallas (`apps/core/tests/test_authentication.py`). |
+| `apps/*` (115 pruebas) | Reglas de negocio por módulo: cálculo de retraso y exigencia de causa en `deliveries.services`, umbrales de `vehicles.services.maintenance_alerts`, rendimiento entre cargas consecutivas en `fuel.services`, cierre de orden en `maintenance.services`, el CRUD genérico, las respuestas de `analytics.queries` y el control de acceso de las quince pantallas (`apps/core/tests/test_authentication.py`). |
 | `warehouse/tests/*` (57 pruebas) | Una prueba por técnica de limpieza con caso válido e inválido, extracción incremental y completa, carga de dimensiones y hechos, ETL de extremo a extremo. |
 | `ml/tests/*` (38 pruebas) | Ausencia de columnas con fuga de datos, entrenamiento de ambos clasificadores y del regresor, barrido de k y elección del conglomerado, ejecución completa de `train_models`. |
 | `seed/tests.py` (13 pruebas) | Volumen generado y que las tasas de retraso caigan dentro del rango realista que los patrones sembrados prometen. |
