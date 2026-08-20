@@ -6,33 +6,103 @@ and the templates never touch the ORM.
 
 from decimal import Decimal
 
-from django.db.models import Avg, Count, DecimalField, Q, Sum, Value
+from django.db.models import Avg, Count, DecimalField, Max, Min, Q, Sum, Value
 from django.db.models.functions import Coalesce
 
 from warehouse import models as dw
 
 DAY_NAMES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+MONTH_NAMES = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+]
 ZERO = Value(Decimal("0.00"), output_field=DecimalField(max_digits=18, decimal_places=2))
+
+
+class Period:
+    """Rango de fechas con el que se acotan todas las consultas.
+
+    Ambos extremos son opcionales: un ``Period()`` sin límites significa todo
+    el histórico, y así se comporta igual que no pasar periodo alguno. El
+    filtro se aplica sobre ``dim_date.full_date``, que está indexado.
+    """
+
+    def __init__(self, start=None, end=None):
+        self.start = start
+        self.end = end
+
+    @property
+    def is_open(self):
+        return self.start is None and self.end is None
+
+    def label(self):
+        if self.is_open:
+            return "todo el histórico"
+        if self.start and self.end:
+            return f"{_spell(self.start)} — {_spell(self.end)}"
+        if self.start:
+            return f"desde {_spell(self.start)}"
+        return f"hasta {_spell(self.end)}"
+
+
+def _spell(day):
+    return f"{day.day} de {MONTH_NAMES[day.month - 1]} de {day.year}"
+
+
+def _scope(queryset, period):
+    """Acota cualquier tabla de hechos al periodo. Todas cuelgan de dim_date."""
+    if period is None or period.is_open:
+        return queryset
+    if period.start:
+        queryset = queryset.filter(date__full_date__gte=period.start)
+    if period.end:
+        queryset = queryset.filter(date__full_date__lte=period.end)
+    return queryset
+
+
+def _deliveries(period=None):
+    return _scope(dw.FactDelivery.objects.all(), period)
+
+
+def _fuel(period=None):
+    return _scope(dw.FactFuel.objects.all(), period)
+
+
+def _maintenance(period=None):
+    return _scope(dw.FactMaintenance.objects.all(), period)
 
 
 def warehouse_is_empty():
     return not dw.FactDelivery.objects.exists()
 
 
-def kpi_summary():
+def data_bounds():
+    """Primera y última fecha con entregas en el almacén.
+
+    Los atajos de periodo se ancoran aquí y no en la fecha de hoy: el almacén
+    puede terminar semanas atrás, y un "último mes" contado desde hoy
+    devolvería una pantalla vacía.
+    """
+    bounds = dw.FactDelivery.objects.aggregate(
+        first=Min("date__full_date"), last=Max("date__full_date")
+    )
+    return bounds["first"], bounds["last"]
+
+
+def kpi_summary(period=None):
     """The six headline numbers, plus the two cost totals behind them."""
-    deliveries = dw.FactDelivery.objects.aggregate(
+    deliveries = _deliveries(period).aggregate(
         total=Count("id"),
         delayed=Count("id", filter=Q(is_delayed=1)),
         avg_delay=Coalesce(Avg("delay_minutes"), 0.0),
         freight=Coalesce(Sum("freight_cost"), ZERO),
         km=Coalesce(Sum("distance_km"), ZERO),
     )
-    fuel = dw.FactFuel.objects.aggregate(
+    fuel = _fuel(period).aggregate(
         cost=Coalesce(Sum("total_cost"), ZERO),
         efficiency=Avg("efficiency_km_per_liter"),
     )
-    maintenance = dw.FactMaintenance.objects.aggregate(
+    maintenance = _maintenance(period).aggregate(
         cost=Coalesce(Sum("total_cost"), ZERO)
     )
 
@@ -50,9 +120,9 @@ def kpi_summary():
     }
 
 
-def monthly_trend():
+def monthly_trend(period=None):
     rows = (
-        dw.FactDelivery.objects.values("date__year", "date__month", "date__month_name")
+        _deliveries(period).values("date__year", "date__month", "date__month_name")
         .annotate(
             deliveries=Count("id"),
             delayed=Count("id", filter=Q(is_delayed=1)),
@@ -70,10 +140,10 @@ def monthly_trend():
     }
 
 
-def top_routes(limit=10):
+def top_routes(limit=10, period=None):
     """P1 — rutas más utilizadas, con su tasa de retraso al lado."""
     rows = (
-        dw.FactDelivery.objects.values(
+        _deliveries(period).values(
             "route__code", "route__name", "route__zone"
         )
         .annotate(shipments=Count("id"), delayed=Count("id", filter=Q(is_delayed=1)))
@@ -91,10 +161,10 @@ def top_routes(limit=10):
     ]
 
 
-def worst_routes(limit=10):
+def worst_routes(limit=10, period=None):
     """P4 — rutas con mayores retrasos (mínimo 20 envíos para que sea señal)."""
     rows = (
-        dw.FactDelivery.objects.values("route__code", "route__name", "route__zone")
+        _deliveries(period).values("route__code", "route__name", "route__zone")
         .annotate(
             shipments=Count("id"),
             delayed=Count("id", filter=Q(is_delayed=1)),
@@ -116,10 +186,10 @@ def worst_routes(limit=10):
     ]
 
 
-def top_operators(limit=10):
+def top_operators(limit=10, period=None):
     """P3 — operadores con más entregas."""
     rows = (
-        dw.FactDelivery.objects.values(
+        _deliveries(period).values(
             "operator__employee_number", "operator__full_name"
         )
         .annotate(deliveries=Count("id"), delayed=Count("id", filter=Q(is_delayed=1)))
@@ -136,14 +206,14 @@ def top_operators(limit=10):
     ]
 
 
-def demand_by_service_type():
+def demand_by_service_type(period=None):
     """Demanda por tipo de servicio: qué corredor mueve más carga.
 
     Los tres tipos (LOCAL, REGIONAL, FORANEA) parten el total de envíos, así
     que la participación de cada uno suma cien por ciento.
     """
     rows = (
-        dw.FactDelivery.objects.values("route__route_type")
+        _deliveries(period).values("route__route_type")
         .annotate(
             shipments=Count("id"),
             delayed=Count("id", filter=Q(is_delayed=1)),
@@ -166,10 +236,10 @@ def demand_by_service_type():
     ]
 
 
-def top_customers(limit=10):
+def top_customers(limit=10, period=None):
     """Clientes que concentran la demanda, con el flete que aportan."""
     rows = (
-        dw.FactDelivery.objects.values(
+        _deliveries(period).values(
             "customer__code", "customer__business_name",
             "customer__city", "customer__customer_type",
         )
@@ -194,11 +264,11 @@ def top_customers(limit=10):
     ]
 
 
-def hour_heatmap():
+def hour_heatmap(period=None):
     """P10 — horarios de mayor saturación, día de la semana x hora."""
     matrix = [[0] * 24 for _ in range(7)]
     rows = (
-        dw.FactDelivery.objects.values("date__day_of_week", "time__hour")
+        _deliveries(period).values("date__day_of_week", "time__hour")
         .annotate(total=Count("id"))
     )
     for row in rows:
@@ -206,10 +276,10 @@ def hour_heatmap():
     return {"days": DAY_NAMES, "hours": list(range(24)), "matrix": matrix}
 
 
-def delay_causes_pareto():
+def delay_causes_pareto(period=None):
     """P6 — causas principales de retraso, ordenadas y acumuladas."""
     rows = (
-        dw.FactDelivery.objects.filter(delay_cause__isnull=False)
+        _deliveries(period).filter(delay_cause__isnull=False)
         .values("delay_cause__name")
         .annotate(total=Count("id"))
         .order_by("-total")
@@ -227,17 +297,17 @@ def delay_causes_pareto():
     }
 
 
-def cost_by_vehicle(limit=15):
+def cost_by_vehicle(limit=15, period=None):
     """P2 — vehículos que generan mayores costos: combustible + mantenimiento."""
     fuel = {
         row["vehicle_id"]: row["total"]
-        for row in dw.FactFuel.objects.values("vehicle_id").annotate(
+        for row in _fuel(period).values("vehicle_id").annotate(
             total=Coalesce(Sum("total_cost"), ZERO)
         )
     }
     maintenance = {
         row["vehicle_id"]: row["total"]
-        for row in dw.FactMaintenance.objects.values("vehicle_id").annotate(
+        for row in _maintenance(period).values("vehicle_id").annotate(
             total=Coalesce(Sum("total_cost"), ZERO)
         )
     }
@@ -257,10 +327,10 @@ def cost_by_vehicle(limit=15):
     return sorted(rows, key=lambda row: row["total_cost"], reverse=True)[:limit]
 
 
-def efficiency_by_vehicle(limit=15):
+def efficiency_by_vehicle(limit=15, period=None):
     """P5 — vehículos que más consumen: peor rendimiento primero."""
     rows = (
-        dw.FactFuel.objects.filter(efficiency_km_per_liter__isnull=False)
+        _fuel(period).filter(efficiency_km_per_liter__isnull=False)
         .values(
             "vehicle__economic_number", "vehicle__vehicle_type", "vehicle__age_range"
         )
@@ -282,9 +352,9 @@ def efficiency_by_vehicle(limit=15):
     ]
 
 
-def cost_per_km_by_route(limit=15):
+def cost_per_km_by_route(limit=15, period=None):
     rows = (
-        dw.FactDelivery.objects.values("route__code", "route__name")
+        _deliveries(period).values("route__code", "route__name")
         .annotate(cost_per_km=Avg("cost_per_km"), shipments=Count("id"))
         .order_by("-cost_per_km")[:limit]
     )

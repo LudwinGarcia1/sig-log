@@ -4,12 +4,12 @@
 
 {% block analytics %}
 <div class="d-flex gap-2 mb-3">
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'rutas' 'csv' %}">Rutas · CSV</a>
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'rutas' 'xlsx' %}">Rutas · Excel</a>
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'rutas-retrasadas' 'xlsx' %}">Retrasos · Excel</a>
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'operadores' 'xlsx' %}">Operadores · Excel</a>
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'demanda-servicio' 'xlsx' %}">Demanda por servicio · Excel</a>
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'demanda-cliente' 'xlsx' %}">Demanda por cliente · Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'rutas' 'csv' %}?{{ period_query }}">Rutas · CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'rutas' 'xlsx' %}?{{ period_query }}">Rutas · Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'rutas-retrasadas' 'xlsx' %}?{{ period_query }}">Retrasos · Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'operadores' 'xlsx' %}?{{ period_query }}">Operadores · Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'demanda-servicio' 'xlsx' %}?{{ period_query }}">Demanda por servicio · Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'demanda-cliente' 'xlsx' %}?{{ period_query }}">Demanda por cliente · Excel</a>
 </div>
 
 <div class="row g-3 mb-3">
@@ -159,37 +159,73 @@
 
 {% block scripts %}
 <script src="{% static 'vendor/chart.umd.min.js' %}"></script>
+<script src="{% static 'js/charts.js' %}"></script>
 {{ routes_json|json_script:"routes-data" }}
 {{ operators_json|json_script:"operators-data" }}
 {{ heatmap_json|json_script:"heatmap-data" }}
 {{ pareto_json|json_script:"pareto-data" }}
 {{ service_demand_json|json_script:"service-data" }}
 <script>
+  // Pastel: los porcentajes van escritos en la leyenda y en el tooltip.
   const service = JSON.parse(document.getElementById("service-data").textContent);
   new Chart(document.getElementById("serviceChart"), {
-    type: "doughnut",
-    data: { labels: service.labels,
-            datasets: [{ label: "Envíos", data: service.values,
-                         backgroundColor: ["#0d6efd", "#20c997", "#ffc107", "#6f42c1"] }] },
-    // Sin esto la dona toma proporción 1:1 y se come la pantalla: el alto lo
-    // fija el contenedor, no el canvas.
-    options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }
+    type: "pie",
+    data: {
+      labels: siglogPercentLabels(service.labels, service.values),
+      datasets: [{ label: "Envíos", data: service.values,
+                   backgroundColor: SIGLOG_COLORS.pie }]
+    },
+    // Sin maintainAspectRatio el pastel toma proporción 1:1 y se come la
+    // pantalla: el alto lo fija el contenedor, no el canvas.
+    options: {
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "bottom" },
+        tooltip: siglogPercentTooltip(service.values)
+      }
+    }
   });
 
   const routes = JSON.parse(document.getElementById("routes-data").textContent);
   new Chart(document.getElementById("routesChart"), {
-    type: "bar",
-    data: { labels: routes.labels,
-            datasets: [{ label: "Envíos", data: routes.values, backgroundColor: "#0d6efd" }] },
-    options: { plugins: { legend: { display: false } } }
+    data: {
+      labels: routes.labels,
+      datasets: [
+        { type: "bar", label: "Envíos", data: routes.values,
+          backgroundColor: siglogMaxColors(
+            routes.values, SIGLOG_COLORS.primary, SIGLOG_COLORS.accent) },
+        siglogAverageDataset(routes.values)
+      ]
+    },
+    options: {
+      // El eje arranca en cero a propósito: si no, Chart.js recorta la base y
+      // las diferencias entre rutas se ven mucho mayores de lo que son.
+      scales: { y: { beginAtZero: true } },
+      plugins: {
+        legend: { position: "bottom" },
+        subtitle: siglogPeakSubtitle(routes.labels, routes.values, "envíos")
+      }
+    }
   });
 
   const operators = JSON.parse(document.getElementById("operators-data").textContent);
   new Chart(document.getElementById("operatorsChart"), {
-    type: "bar",
-    data: { labels: operators.labels,
-            datasets: [{ label: "Entregas", data: operators.values, backgroundColor: "#198754" }] },
-    options: { plugins: { legend: { display: false } } }
+    data: {
+      labels: operators.labels,
+      datasets: [
+        { type: "bar", label: "Entregas", data: operators.values,
+          backgroundColor: siglogMaxColors(
+            operators.values, SIGLOG_COLORS.secondary, SIGLOG_COLORS.accent) },
+        siglogAverageDataset(operators.values)
+      ]
+    },
+    options: {
+      scales: { y: { beginAtZero: true } },
+      plugins: {
+        legend: { position: "bottom" },
+        subtitle: siglogPeakSubtitle(operators.labels, operators.values, "entregas")
+      }
+    }
   });
 
   // Heatmap cells are painted here so the template stays free of arithmetic.
@@ -211,9 +247,9 @@
       labels: pareto.labels,
       datasets: [
         { type: "bar", label: "Entregas con retraso", data: pareto.counts,
-          backgroundColor: "#dc3545", yAxisID: "y" },
+          backgroundColor: SIGLOG_COLORS.danger, yAxisID: "y" },
         { type: "line", label: "Acumulado %", data: pareto.cumulative,
-          borderColor: "#fd7e14", yAxisID: "y1", tension: 0.2 }
+          borderColor: SIGLOG_COLORS.accent, yAxisID: "y1", tension: 0.2 }
       ]
     },
     options: {

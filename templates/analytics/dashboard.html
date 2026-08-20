@@ -28,7 +28,7 @@
   <div class="col-lg-4">
     <div class="card shadow-sm h-100">
       <div class="card-header">Costos acumulados</div>
-      <div class="card-body"><canvas id="costChart" height="220"></canvas></div>
+      <div class="card-body" style="height:320px"><canvas id="costChart"></canvas></div>
     </div>
   </div>
 </div>
@@ -36,30 +36,52 @@
 
 {% block scripts %}
 <script src="{% static 'vendor/chart.umd.min.js' %}"></script>
+<script src="{% static 'js/charts.js' %}"></script>
 {{ trend_json|json_script:"trend-data" }}
 {{ cost_json|json_script:"cost-data" }}
 <script>
+  // Tendencia mensual: dos series reales más la línea de promedio de entregas,
+  // y el mes más alto anunciado en el subtítulo.
   const trend = JSON.parse(document.getElementById("trend-data").textContent);
   new Chart(document.getElementById("trendChart"), {
-    type: "line",
     data: {
       labels: trend.labels,
       datasets: [
-        { label: "Entregas", data: trend.deliveries, borderColor: "#0d6efd", tension: 0.3 },
-        { label: "Con retraso", data: trend.delayed, borderColor: "#dc3545", tension: 0.3 }
+        { type: "line", label: "Entregas", data: trend.deliveries,
+          borderColor: SIGLOG_COLORS.primary, tension: 0.3,
+          pointBackgroundColor: siglogMaxColors(
+            trend.deliveries, SIGLOG_COLORS.primary, SIGLOG_COLORS.accent),
+          pointRadius: 4 },
+        { type: "line", label: "Con retraso", data: trend.delayed,
+          borderColor: SIGLOG_COLORS.danger, tension: 0.3 },
+        siglogAverageDataset(trend.deliveries)
       ]
     },
-    options: { responsive: true, plugins: { legend: { position: "bottom" } } }
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: "bottom" },
+        subtitle: siglogPeakSubtitle(trend.labels, trend.deliveries, "entregas")
+      }
+    }
   });
 
+  // Pastel de costos: porcentaje en la leyenda y en el tooltip.
   const costs = JSON.parse(document.getElementById("cost-data").textContent);
   new Chart(document.getElementById("costChart"), {
-    type: "doughnut",
+    type: "pie",
     data: {
-      labels: costs.labels,
-      datasets: [{ data: costs.values, backgroundColor: ["#0d6efd", "#fd7e14", "#198754"] }]
+      labels: siglogPercentLabels(costs.labels, costs.values),
+      datasets: [{ data: costs.values, backgroundColor: SIGLOG_COLORS.pie }]
     },
-    options: { responsive: true, plugins: { legend: { position: "bottom" } } }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "bottom" },
+        tooltip: siglogPercentTooltip(costs.values)
+      }
+    }
   });
 </script>
 {% endblock %}

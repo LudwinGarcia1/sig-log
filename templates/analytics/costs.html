@@ -5,10 +5,10 @@
 
 {% block analytics %}
 <div class="d-flex gap-2 mb-3">
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'costos-vehiculo' 'csv' %}">Costos · CSV</a>
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'costos-vehiculo' 'xlsx' %}">Costos · Excel</a>
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'rendimiento' 'xlsx' %}">Rendimiento · Excel</a>
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'costo-por-km' 'xlsx' %}">Costo/km · Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'costos-vehiculo' 'csv' %}?{{ period_query }}">Costos · CSV</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'costos-vehiculo' 'xlsx' %}?{{ period_query }}">Costos · Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'rendimiento' 'xlsx' %}?{{ period_query }}">Rendimiento · Excel</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'costo-por-km' 'xlsx' %}?{{ period_query }}">Costo/km · Excel</a>
 </div>
 
 <div class="card shadow-sm mb-3">

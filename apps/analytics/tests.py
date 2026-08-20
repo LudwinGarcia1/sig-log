@@ -1,4 +1,5 @@
 import tempfile
+from datetime import date, timedelta
 from pathlib import Path
 from unittest import mock
 
@@ -8,6 +9,7 @@ from django.urls import reverse
 
 from apps.analytics import queries
 from apps.core.tests.base import AuthenticatedTestCase
+from warehouse import models as dw
 from ml import evaluation, supervised, unsupervised
 
 
@@ -134,6 +136,64 @@ class AnalyticsQueriesTest(TestCase):
         rows = queries.demand_by_service_type()
         counts = [row["shipments"] for row in rows]
         self.assertEqual(counts, sorted(counts, reverse=True))
+
+    # ---- filtro de periodo ----
+
+    def _bounds(self):
+        from django.db.models import Max, Min
+
+        return dw.FactDelivery.objects.aggregate(
+            lo=Min("date__full_date"), hi=Max("date__full_date")
+        )
+
+    def test_a_period_narrows_every_fact_table(self):
+        bounds = self._bounds()
+        half = bounds["lo"] + (bounds["hi"] - bounds["lo"]) / 2
+        period = queries.Period(start=bounds["lo"], end=half)
+
+        scoped = queries.kpi_summary(period)
+        self.assertLess(scoped["deliveries"], queries.kpi_summary()["deliveries"])
+        self.assertEqual(
+            scoped["deliveries"],
+            dw.FactDelivery.objects.filter(
+                date__full_date__gte=bounds["lo"], date__full_date__lte=half
+            ).count(),
+        )
+        self.assertLess(
+            float(scoped["fuel_cost"]), float(queries.kpi_summary()["fuel_cost"])
+        )
+
+    def test_a_period_narrows_the_rankings(self):
+        bounds = self._bounds()
+        period = queries.Period(start=bounds["hi"] - timedelta(days=15), end=bounds["hi"])
+        wide = sum(row["shipments"] for row in queries.top_routes(limit=100))
+        narrow = sum(row["shipments"] for row in queries.top_routes(limit=100, period=period))
+        self.assertLess(narrow, wide)
+
+    def test_an_open_period_matches_no_period_at_all(self):
+        self.assertEqual(
+            queries.kpi_summary(queries.Period())["deliveries"],
+            queries.kpi_summary()["deliveries"],
+        )
+
+    def test_an_empty_period_answers_zero_instead_of_crashing(self):
+        """Nothing in range must not raise: no division by zero, no [-1] on []."""
+        period = queries.Period(start=date(1990, 1, 1), end=date(1990, 12, 31))
+        self.assertEqual(queries.kpi_summary(period)["deliveries"], 0)
+        self.assertEqual(queries.demand_by_service_type(period), [])
+        self.assertEqual(queries.top_routes(period=period), [])
+        self.assertEqual(queries.top_operators(period=period), [])
+        self.assertEqual(queries.top_customers(period=period), [])
+        self.assertEqual(queries.delay_causes_pareto(period)["labels"], [])
+        self.assertEqual(queries.monthly_trend(period)["labels"], [])
+        heatmap = queries.hour_heatmap(period)
+        self.assertEqual(sum(sum(row) for row in heatmap["matrix"]), 0)
+
+    def test_the_period_describes_itself_for_the_screen(self):
+        self.assertIn("histórico", queries.Period().label())
+        labelled = queries.Period(start=date(2026, 3, 1), end=date(2026, 3, 31)).label()
+        self.assertIn("2026", labelled)
+        self.assertIn("marzo", labelled.lower())
 
     def test_top_customers_is_ordered_by_shipments(self):
         rows = queries.top_customers(limit=5)

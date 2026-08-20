@@ -5,8 +5,11 @@ the classifier was trained under. It derives the remaining feature columns from
 the chosen route so the user cannot introduce an inconsistency.
 """
 
+from datetime import timedelta
+
 from django import forms
 
+from apps.analytics import queries
 from apps.routes.models import Route
 from warehouse.etl.cleaning import distance_range
 from warehouse.models import TIME_BANDS
@@ -89,3 +92,61 @@ class DelayPredictionForm(forms.Form):
             "customer_type": data["customer_type"],
             "is_weekend": "True" if day >= 5 else "False",
         }
+
+
+class PeriodForm(forms.Form):
+    """Rango de fechas con el que se acotan las pantallas de análisis.
+
+    Los atajos se resuelven contra la última fecha con datos, que la vista
+    entrega en ``last_day``; contarlos desde hoy dejaría la pantalla vacía en
+    cuanto el almacén se quede atrás.
+    """
+
+    PRESET_DAYS = {"mes": 30, "trimestre": 91, "anio": 365}
+    PRESETS = [
+        ("todo", "Todo"),
+        ("mes", "Último mes"),
+        ("trimestre", "Último trimestre"),
+        ("anio", "Último año"),
+    ]
+
+    start = forms.DateField(
+        required=False, label="Desde",
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+    )
+    end = forms.DateField(
+        required=False, label="Hasta",
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+    )
+    preset = forms.ChoiceField(
+        required=False, choices=PRESETS, widget=forms.HiddenInput
+    )
+
+    def __init__(self, *args, last_day=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.last_day = last_day
+
+    def clean(self):
+        data = super().clean()
+        start, end = data.get("start"), data.get("end")
+        if start and end and start > end:
+            raise forms.ValidationError(
+                "La fecha inicial no puede ser posterior a la final."
+            )
+        return data
+
+    def period(self):
+        """El periodo elegido; todo el histórico si no se pidió nada válido."""
+        if not self.is_bound or not self.is_valid():
+            return queries.Period()
+        preset = self.cleaned_data.get("preset")
+        if preset in self.PRESET_DAYS and self.last_day:
+            days = self.PRESET_DAYS[preset]
+            return queries.Period(
+                start=self.last_day - timedelta(days=days), end=self.last_day
+            )
+        if preset == "todo":
+            return queries.Period()
+        return queries.Period(
+            start=self.cleaned_data.get("start"), end=self.cleaned_data.get("end")
+        )

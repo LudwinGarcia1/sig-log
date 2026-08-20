@@ -10,6 +10,42 @@
   <li class="nav-item"><a class="nav-link {% if section == 'clusters' %}active{% endif %}" href="{% url 'analytics_clusters' %}">Conglomerados</a></li>
 </ul>
 
+{% if period_form %}
+<form method="get" class="card shadow-sm mb-4">
+  <div class="card-body py-3">
+    <div class="row g-2 align-items-end">
+      <div class="col-auto">
+        <label class="form-label mb-1" for="{{ period_form.start.id_for_label }}">Desde</label>
+        {{ period_form.start }}
+      </div>
+      <div class="col-auto">
+        <label class="form-label mb-1" for="{{ period_form.end.id_for_label }}">Hasta</label>
+        {{ period_form.end }}
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Aplicar</button>
+      </div>
+      <div class="col-auto">
+        <div class="btn-group" role="group">
+          {% for value, text in period_form.fields.preset.choices %}
+          <a class="btn btn-outline-secondary btn-sm" href="?preset={{ value }}">{{ text }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col text-end">
+        <span class="text-body-secondary small">Periodo: <strong>{{ period_label }}</strong></span>
+      </div>
+    </div>
+    {% if period_form.errors %}
+    <div class="alert alert-danger mt-2 mb-0 py-2">
+      {% for error in period_form.non_field_errors %}{{ error }}{% endfor %}
+      {{ period_form.start.errors }}{{ period_form.end.errors }}
+    </div>
+    {% endif %}
+  </div>
+</form>
+{% endif %}
+
 {% if warehouse_empty %}
 <div class="alert alert-warning">
   <strong>El data warehouse está vacío.</strong>

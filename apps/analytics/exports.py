@@ -15,7 +15,7 @@ from apps.analytics import queries
 REPORTS = {
     "rutas": {
         "label": "Rutas más utilizadas",
-        "builder": lambda: queries.top_routes(limit=100),
+        "builder": lambda period=None: queries.top_routes(limit=100, period=period),
         "columns": [
             ("code", "Código"), ("name", "Ruta"), ("zone", "Zona"),
             ("shipments", "Envíos"), ("delay_rate", "% retraso"),
@@ -23,7 +23,7 @@ REPORTS = {
     },
     "rutas-retrasadas": {
         "label": "Rutas con mayores retrasos",
-        "builder": lambda: queries.worst_routes(limit=100),
+        "builder": lambda period=None: queries.worst_routes(limit=100, period=period),
         "columns": [
             ("code", "Código"), ("name", "Ruta"), ("zone", "Zona"),
             ("shipments", "Envíos"), ("avg_delay", "Retraso promedio (min)"),
@@ -32,7 +32,7 @@ REPORTS = {
     },
     "operadores": {
         "label": "Operadores con más entregas",
-        "builder": lambda: queries.top_operators(limit=100),
+        "builder": lambda period=None: queries.top_operators(limit=100, period=period),
         "columns": [
             ("employee_number", "Empleado"), ("full_name", "Nombre"),
             ("deliveries", "Entregas"), ("delay_rate", "% retraso"),
@@ -40,7 +40,7 @@ REPORTS = {
     },
     "costos-vehiculo": {
         "label": "Costo total por vehículo",
-        "builder": lambda: queries.cost_by_vehicle(limit=200),
+        "builder": lambda period=None: queries.cost_by_vehicle(limit=200, period=period),
         "columns": [
             ("economic_number", "Económico"), ("plate", "Placa"),
             ("vehicle_type", "Tipo"), ("age_range", "Antigüedad"),
@@ -50,7 +50,7 @@ REPORTS = {
     },
     "rendimiento": {
         "label": "Rendimiento por vehículo",
-        "builder": lambda: queries.efficiency_by_vehicle(limit=200),
+        "builder": lambda period=None: queries.efficiency_by_vehicle(limit=200, period=period),
         "columns": [
             ("economic_number", "Económico"), ("vehicle_type", "Tipo"),
             ("age_range", "Antigüedad"), ("efficiency", "km/L"),
@@ -59,7 +59,7 @@ REPORTS = {
     },
     "demanda-servicio": {
         "label": "Demanda por tipo de servicio",
-        "builder": queries.demand_by_service_type,
+        "builder": lambda period=None: queries.demand_by_service_type(period),
         "columns": [
             ("service_type", "Servicio"), ("shipments", "Envíos"),
             ("share", "Participación %"), ("delay_rate", "% retraso"),
@@ -68,7 +68,7 @@ REPORTS = {
     },
     "demanda-cliente": {
         "label": "Clientes con mayor demanda",
-        "builder": lambda: queries.top_customers(limit=200),
+        "builder": lambda period=None: queries.top_customers(limit=200, period=period),
         "columns": [
             ("code", "Código"), ("business_name", "Cliente"),
             ("city", "Ciudad"), ("customer_type", "Tipo"),
@@ -78,7 +78,7 @@ REPORTS = {
     },
     "costo-por-km": {
         "label": "Costo por kilómetro por ruta",
-        "builder": lambda: queries.cost_per_km_by_route(limit=200),
+        "builder": lambda period=None: queries.cost_per_km_by_route(limit=200, period=period),
         "columns": [
             ("code", "Código"), ("name", "Ruta"),
             ("cost_per_km", "Costo por km"), ("shipments", "Envíos"),
@@ -93,24 +93,24 @@ def _report_or_404(slug):
     return REPORTS[slug]
 
 
-def to_csv(slug):
+def to_csv(slug, period=None):
     report = _report_or_404(slug)
     response = HttpResponse(content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="{slug}.csv"'
     response.write("\ufeff")  # BOM para que Excel lea los acentos
     writer = csv.writer(response)
     writer.writerow([header for _, header in report["columns"]])
-    for row in report["builder"]():
+    for row in report["builder"](period):
         writer.writerow([row[key] for key, _ in report["columns"]])
     return response
 
 
-def to_excel(slug):
+def to_excel(slug, period=None):
     report = _report_or_404(slug)
     frame = pd.DataFrame(
         [
             {header: row[key] for key, header in report["columns"]}
-            for row in report["builder"]()
+            for row in report["builder"](period)
         ]
     )
     buffer = BytesIO()

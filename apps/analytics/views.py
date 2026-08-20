@@ -11,9 +11,21 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 from apps.analytics import exports, queries
-from apps.analytics.forms import DelayPredictionForm
+from apps.analytics.forms import DelayPredictionForm, PeriodForm
 from apps.vehicles.services import maintenance_alerts
 from ml import evaluation, supervised, unsupervised
+
+
+def _period(request):
+    """El periodo pedido por la URL, más el formulario para volver a pintarlo."""
+    _, last_day = queries.data_bounds()
+    form = PeriodForm(request.GET or None, last_day=last_day)
+    period = form.period()
+    return period, {
+        "period_form": form,
+        "period_label": period.label(),
+        "period_query": request.GET.urlencode(),
+    }
 
 
 def _money(value):
@@ -30,10 +42,11 @@ def dashboard(request):
             {"section": "dashboard", "warehouse_empty": True},
         )
 
-    kpi = queries.kpi_summary()
+    period, period_context = _period(request)
+    kpi = queries.kpi_summary(period)
     cards = [
         {"label": "Entregas del periodo", "value": f"{kpi['deliveries']:,}",
-         "hint": "Entregas cerradas en el almacén"},
+         "hint": period.label()},
         {"label": "Cumplimiento", "value": f"{kpi['on_time_rate']}%",
          "hint": "Llegadas dentro de la tolerancia de 15 min"},
         {"label": "Retraso promedio", "value": f"{kpi['avg_delay_minutes']} min",
@@ -55,7 +68,8 @@ def dashboard(request):
         "warehouse_empty": False,
         "kpi": kpi,
         "cards": cards,
-        "trend_json": queries.monthly_trend(),
+        **period_context,
+        "trend_json": queries.monthly_trend(period),
         "cost_json": {
             "labels": ["Combustible", "Mantenimiento"],
             "values": [float(kpi["fuel_cost"]), float(kpi["maintenance_cost"])],
@@ -70,17 +84,19 @@ def operations(request):
         return render(request, "analytics/operations.html",
                       {"section": "operations", "warehouse_empty": True})
 
-    heatmap = queries.hour_heatmap()
-    pareto = queries.delay_causes_pareto()
-    top = queries.top_routes(limit=10)
-    operators = queries.top_operators(limit=10)
-    service_demand = queries.demand_by_service_type()
+    period, period_context = _period(request)
+    heatmap = queries.hour_heatmap(period)
+    pareto = queries.delay_causes_pareto(period)
+    top = queries.top_routes(limit=10, period=period)
+    operators = queries.top_operators(limit=10, period=period)
+    service_demand = queries.demand_by_service_type(period)
 
     return render(request, "analytics/operations.html", {
         "section": "operations",
         "warehouse_empty": False,
+        **period_context,
         "top_routes": top,
-        "worst_routes": queries.worst_routes(limit=10),
+        "worst_routes": queries.worst_routes(limit=10, period=period),
         "operators": operators,
         "heatmap": heatmap,
         "heatmap_json": heatmap,
@@ -98,7 +114,7 @@ def operations(request):
             "labels": [row["service_type"] for row in service_demand],
             "values": [row["shipments"] for row in service_demand],
         },
-        "top_customers": queries.top_customers(limit=10),
+        "top_customers": queries.top_customers(limit=10, period=period),
     })
 
 
@@ -109,15 +125,17 @@ def costs(request):
         return render(request, "analytics/costs.html",
                       {"section": "costs", "warehouse_empty": True})
 
-    vehicles = queries.cost_by_vehicle(limit=15)
-    efficiency = queries.efficiency_by_vehicle(limit=15)
+    period, period_context = _period(request)
+    vehicles = queries.cost_by_vehicle(limit=15, period=period)
+    efficiency = queries.efficiency_by_vehicle(limit=15, period=period)
 
     return render(request, "analytics/costs.html", {
         "section": "costs",
         "warehouse_empty": False,
+        **period_context,
         "vehicles": vehicles,
         "efficiency": efficiency,
-        "routes": queries.cost_per_km_by_route(limit=15),
+        "routes": queries.cost_per_km_by_route(limit=15, period=period),
         "cost_json": {
             "labels": [row["economic_number"] for row in vehicles],
             "fuel": [float(row["fuel_cost"]) for row in vehicles],
@@ -214,7 +232,8 @@ def clusters(request):
 
 @login_required
 def export_report(request, slug, fmt):
-    """Serve a report as CSV or Excel. The format is the only branch here."""
+    """Serve a report as CSV or Excel, honouring the period on the screen."""
+    period, _ = _period(request)
     if fmt == "xlsx":
-        return exports.to_excel(slug)
-    return exports.to_csv(slug)
+        return exports.to_excel(slug, period)
+    return exports.to_csv(slug, period)
