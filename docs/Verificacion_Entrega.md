@@ -255,3 +255,39 @@ correspondía a las entregas que llegaron tarde. No era así:
 El panel publica ahora las dos cifras en tarjetas rotuladas, `kpi_summary`
 devuelve `avg_delay_when_late` junto a `avg_delay_minutes`, y una prueba fija
 que sean números distintos y correctos.
+
+
+---
+
+## 8. Exportación a PDF — 20 de agosto de 2026
+
+Los ocho reportes se pueden descargar además en PDF. Verificación:
+
+| Comprobación | Resultado |
+|---|---|
+| `python manage.py test` | **227 pruebas, `OK`**, 394.4 s |
+| Los ocho reportes en PDF | Los ocho responden 200 con cabecera `%PDF-1.4` |
+| PDF sobre HTTP con periodo | `demanda-servicio.pdf` de marzo: 2,514 bytes, `application/pdf` |
+| Contenido contra la pantalla | 970 / 454 / 79 envíos, idéntico a la tabla y al CSV |
+| Paginación | 60 rutas → 4 páginas con el encabezado repetido en cada una |
+| Periodo sin datos | Imprime "No hay datos en el periodo seleccionado", no una tabla vacía |
+| Sin sesión | 302 hacia `/entrar/?next=/reportes/exportar/rutas.pdf` |
+
+Desglose por paquete: `apps` 119, `warehouse` 57, `ml` 38, `seed` 13.
+
+### 8.1 Por qué reportlab
+
+WeasyPrint produce mejor tipografía porque renderiza HTML y CSS, pero en
+Windows depende de GTK instalado por fuera de `pip`. Eso contradice la
+instalación desde cero que promete el manual técnico. reportlab es una rueda
+de Python puro: entra con `pip install -r requirements.txt` y no pide nada
+del sistema.
+
+### 8.2 Nota de entorno
+
+La dependencia se instaló en los dos entornos que existen en el equipo de
+desarrollo: el `.venv` del proyecto y el entorno conda `siglog` que documenta
+el `README.md`. Un import fallido en `apps/analytics/exports.py` no habría
+roto solo el PDF: habría tumbado el módulo de reportes completo, porque el
+import es de nivel de módulo. Ambos entornos generan el mismo archivo de
+11,520 bytes para `rutas` sobre todo el histórico.

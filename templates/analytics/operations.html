@@ -10,6 +10,11 @@
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'operadores' 'xlsx' %}?{{ period_query }}">Operadores · Excel</a>
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'demanda-servicio' 'xlsx' %}?{{ period_query }}">Demanda por servicio · Excel</a>
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'analytics_export' 'demanda-cliente' 'xlsx' %}?{{ period_query }}">Demanda por cliente · Excel</a>
+  <a class="btn btn-sm btn-outline-danger" href="{% url 'analytics_export' 'rutas' 'pdf' %}?{{ period_query }}">Rutas · PDF</a>
+  <a class="btn btn-sm btn-outline-danger" href="{% url 'analytics_export' 'rutas-retrasadas' 'pdf' %}?{{ period_query }}">Retrasos · PDF</a>
+  <a class="btn btn-sm btn-outline-danger" href="{% url 'analytics_export' 'operadores' 'pdf' %}?{{ period_query }}">Operadores · PDF</a>
+  <a class="btn btn-sm btn-outline-danger" href="{% url 'analytics_export' 'demanda-servicio' 'pdf' %}?{{ period_query }}">Demanda por servicio · PDF</a>
+  <a class="btn btn-sm btn-outline-danger" href="{% url 'analytics_export' 'demanda-cliente' 'pdf' %}?{{ period_query }}">Demanda por cliente · PDF</a>
 </div>
 
 <div class="row g-3 mb-3">

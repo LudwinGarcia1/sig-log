@@ -41,7 +41,7 @@ las gráficas están acopladas a preguntas de negocio fijas y a modelos
 entrenados por un pipeline reproducible, y necesitan vivir dentro de la
 misma aplicación web que ya sirve el resto del sistema — exportar los datos a
 una herramienta externa y mantener sincronizados dos sistemas habría sido
-más trabajo, no menos. Las exportaciones a CSV y Excel (`apps/analytics/exports.py`)
+más trabajo, no menos. Las exportaciones a CSV, Excel y PDF (`apps/analytics/exports.py`)
 sí existen, precisamente para el caso en que alguien quiera continuar el
 análisis en Excel o Power BI fuera del sistema.
 

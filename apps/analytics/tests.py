@@ -441,6 +441,43 @@ class ExportTest(AuthenticatedTestCase):
             response = self.client.get(reverse("analytics_export", args=[slug, "csv"]))
             self.assertEqual(response.status_code, 200, slug)
 
+    def test_pdf_export_returns_a_real_pdf(self):
+        response = self.client.get(
+            reverse("analytics_export", args=["rutas", "pdf"])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertTrue(response.content.startswith(b"%PDF-"))
+        self.assertIn("rutas.pdf", response["Content-Disposition"])
+
+    def test_every_declared_report_exports_to_pdf(self):
+        from apps.analytics import exports
+
+        for slug in exports.REPORTS:
+            response = self.client.get(
+                reverse("analytics_export", args=[slug, "pdf"])
+            )
+            self.assertEqual(response.status_code, 200, slug)
+            self.assertTrue(response.content.startswith(b"%PDF-"), slug)
+
+    def test_the_pdf_states_the_period_it_covers(self):
+        """El PDF se imprime y circula: tiene que decir de qué fechas es."""
+        from apps.analytics import exports
+        from apps.analytics.queries import Period
+
+        body = exports.pdf_bytes("rutas", Period(start=date(2026, 3, 1),
+                                                 end=date(2026, 3, 31)))
+        self.assertTrue(body.startswith(b"%PDF-"))
+        self.assertGreater(len(body), 1000)
+
+    def test_a_pdf_of_an_empty_period_still_renders(self):
+        from apps.analytics import exports
+        from apps.analytics.queries import Period
+
+        body = exports.pdf_bytes("rutas", Period(start=date(1990, 1, 1),
+                                                 end=date(1990, 12, 31)))
+        self.assertTrue(body.startswith(b"%PDF-"))
+
     def test_the_demand_reports_are_exportable(self):
         from apps.analytics import exports
 

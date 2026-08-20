@@ -238,4 +238,6 @@ def export_report(request, slug, fmt):
     period, _ = _period(request)
     if fmt == "xlsx":
         return exports.to_excel(slug, period)
+    if fmt == "pdf":
+        return exports.to_pdf(slug, period)
     return exports.to_csv(slug, period)

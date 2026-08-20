@@ -181,8 +181,19 @@ es lo que se edita, y son unas seis líneas.
 
 Los ocho disponibles hoy: rutas más utilizadas, rutas con mayores retrasos,
 operadores con más entregas, costo por vehículo, rendimiento por vehículo,
-costo por kilómetro, demanda por servicio y demanda por cliente. Todos en CSV
-y en Excel, todos acotados al periodo de la pantalla.
+costo por kilómetro, demanda por servicio y demanda por cliente. Los ocho en
+**CSV, Excel y PDF**, los tres acotados al periodo de la pantalla.
+
+El PDF se arma con reportlab en `pdf_bytes()`: hoja horizontal, encabezado
+repetido en cada página (`repeatRows=1`), y una primera línea que dice el
+reporte, el periodo, cuántos registros trae y cuándo se generó. Si el periodo
+está vacío imprime "No hay datos en el periodo seleccionado" en lugar de una
+tabla vacía.
+
+**Por qué reportlab y no WeasyPrint:** reportlab es una rueda de Python puro y
+se instala con `pip` en cualquier sistema. WeasyPrint da mejor tipografía pero
+necesita GTK instalado aparte en Windows, y eso rompería la instalación desde
+cero que promete el manual técnico.
 
 ---
 
@@ -320,7 +331,7 @@ Y comprueba, en este orden, que no haya sorpresas:
 3. Aplica "Último mes" y confirma que los números **cambian**.
 4. Aplica un rango sin datos (2026-12-01 a 2026-12-31) y confirma que
    muestra ceros sin error.
-5. Descarga un CSV y un Excel.
+5. Descarga un CSV, un Excel y un PDF, y ábrelos.
 6. Manda una predicción en `/reportes/prediccion/`.
 
-Si algo falla, `python manage.py test` corre 223 pruebas y te dice qué se rompió.
+Si algo falla, `python manage.py test` corre 227 pruebas y te dice qué se rompió.

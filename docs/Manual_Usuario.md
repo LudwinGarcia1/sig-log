@@ -236,7 +236,7 @@ escrito en la leyenda.
   retrasos con el menor número de acciones.
 
 Los seis botones de la parte superior descargan cualquiera de estos cuadros
-en CSV o Excel, incluidos los dos de demanda.
+en CSV, Excel o PDF, incluidos los dos de demanda.
 
 ### 5.3 Costos
 
@@ -302,9 +302,19 @@ resume cada grupo con su nombre en español:
 
 ## 6. Exportar reportes
 
-Los botones "CSV" y "Excel" sobre cada tabla de Operación y Costos generan el
-archivo con las mismas columnas que se ven en pantalla, en español, listo
-para abrir en Excel o para adjuntar a un correo.
+Los botones sobre las tablas de Operación y Costos generan el archivo con las
+mismas columnas que ves en pantalla, en español, y **acotado al periodo que
+tengas aplicado**: si estás viendo marzo, el archivo trae marzo.
+
+| Formato | Botón | Para qué sirve |
+|---|---|---|
+| CSV | gris | Abrirlo en Excel o procesarlo con otra herramienta |
+| Excel | gris | Un libro `.xlsx` con la hoja ya nombrada |
+| PDF | rojo | Imprimirlo o adjuntarlo tal cual, sin que nadie lo edite |
+
+El PDF sale horizontal, con el nombre del reporte, el periodo que cubre, el
+número de registros y la fecha en que se generó. Si son muchos renglones,
+reparte en varias páginas y repite el encabezado de la tabla en cada una.
 
 ## 7. Preguntas frecuentes
 

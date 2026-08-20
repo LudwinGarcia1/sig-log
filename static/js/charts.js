@@ -1,14 +1,9 @@
-/* Paleta y utilidades compartidas por todas las gráficas del sistema.
- *
- * PARA CAMBIAR UN COLOR: edita el valor en SIGLOG_COLORS y recarga. Ese es el
- * único lugar donde vive cada color; ninguna plantilla los repite.
- */
 const SIGLOG_COLORS = {
-  primary:   "#0d6efd",   // barras principales (envíos, entregas)
-  secondary: "#198754",   // segunda serie (operadores)
-  accent:    "#fd7e14",   // el valor más alto de una serie
-  average:   "#6c757d",   // línea de promedio
-  danger:    "#dc3545",   // retrasos
+  primary:   "#00050c",   // barras principales (envíos, entregas)
+  secondary: "#c0cac5",   // segunda serie (operadores)
+  accent:    "#14fdde",   // el valor más alto de una serie
+  average:   "#2792f0",   // línea de promedio
+  danger:    "#302022",   // retrasos
   pie: ["#0d6efd", "#20c997", "#ffc107", "#6f42c1", "#fd7e14", "#dc3545"],
 };
 
